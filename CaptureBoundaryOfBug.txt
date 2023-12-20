@@ -10,7 +10,7 @@ bug that is located on the Golly grid.*
 The following scripts are neccessary:
 
 * BoundaryCellCapture.lua
-* CSVplot.csv
+* CSVplot.lua
 * CaptureLiveCellstoCSV.lua
 
 -----------------------------------------------------------------------------------------------
