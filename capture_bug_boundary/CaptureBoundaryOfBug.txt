@@ -10,7 +10,11 @@ bug that is located on the Golly grid.*
 The following scripts are neccessary:
 
 * BoundaryCellCapture.lua
+
 * CSVplot.lua
+or
+* CSVcenter_plot.lua
+
 * CaptureLiveCellstoCSV.lua
 
 -----------------------------------------------------------------------------------------------
@@ -39,11 +43,11 @@ The following scripts are neccessary:
    On Mac: Secondary click the file on Finder, then hold down the OPTION key\
    to reveal and select “Copy (item name) as Pathname”.
 
-5. Paste the pathname into the script: CSVplot.lua
+5. Paste the pathname into the script: CSVplot.lua OR CSVcenter_plot.lua
    Ensure the path name is contained in single quotes, and uses only foward slashes
    '../../../..'
 
-6. In Golly, run the CSVplot.lua script
+6. In Golly, run the CSVplot.lua OR CSVcenter_plot.lua script
    Ensure that the boundary coordinates have been plotted on the grid as live (1) cells.
 
 7. Once the boundary points are on the grid
