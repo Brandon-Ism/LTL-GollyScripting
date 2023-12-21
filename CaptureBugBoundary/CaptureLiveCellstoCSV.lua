@@ -18,6 +18,7 @@ local x0, y0, width, height = table.unpack(selrect)
 local function writeCSV(filename, data)
     local file = io.open(filename, "w")
     if file then
+        file:write("x,y\n")
         for _, coords in ipairs(data) do
             file:write(coords[1] .. "," .. coords[2] .. "\n")
         end
@@ -41,7 +42,7 @@ end
 
 -- Write to CSV file
     -- User may change filename of CSV file to be created as "my_filename.csv".
-local filename = g.getdir("app") .. "live_cells.csv"
-writeCSV(filename, liveCells)
+--local filename = g.getdir("app") .. "live_cells.csv"
+writeCSV("live_cells.csv", liveCells)
 
-g.note("Coordinates of live cells have been written to:\n" .. filename)
+g.note("Coordinates of live cells have been written to:\n" .. "live_cells.csv")
