@@ -62,9 +62,10 @@ end
 local centroid_x, centroid_y = calculate_centroid(coords)
 
 -- Shift coordinates and plot them onto the Golly grid
+    -- The '+0' is a placeholder for potential future adjustments to the x and y coordinates.   
+    -- To shift the center point, replace '+0' with the desired x and y offsets.
 for _, coord in ipairs(coords) do
-    local x, y = coord[1] - centroid_x, coord[2] - centroid_y
-    -- Ensure the shifted coordinates are centered around (0,0)
+    local x, y = coord[1] - centroid_x + 0, coord[2] - centroid_y + 0
     g.setcell(x, y, 1)
 end
 -----------------------------------------------------------------------------------------------
