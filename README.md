@@ -56,12 +56,19 @@ To get started with these Lua scripts tailored for Golly, follow these steps:
 ## Scripts
 
 * **DrawRectangle.lua**: Allows user to draw a rectangle of live(1) cells by clicking opposite corners on grid.
+  
 * **DrawRectangle-Menu.lua**: Presents user with options to draw(1) a solid rectangle: clicking 2 opposite corners with live cell preview OR inputting vertices/dimensions of rectangle.
+  
 * **DrawRectangleWithErase.lua**: Allows user to draw(1) a rectangle, with a live cell preview, by clicking two opposite corners. The live cell preview will overwrite existing live(1) cells on the grid.
+  
 * **DrawRectangleWithOutline-Menu.lua**: Presents user with options to draw (live cells(1)) a rectangle: clicking 2 opposite corners with live cell preview OR inputting vertices/dimensions of rectangle.
+  
 * **EraseRectangleWithOutline-Menu.lua**: Presents user with options to draw (dead cells (0)) a rectangle outline: clicking 2 opposite corners with live cell preview OR inputting vertices/dimensions of rectangle.
+  
 * **DrawCircle-Menu.lua**: Presents user with options to draw (live (1)) a filled circle or unfilled circle (ring): selecting center and dragging to radius length OR inputting center coordinates (x,y), and inputting radius length.
+  
 * **EraseCircle-Menu.lua**: Presents user with options to draw (dead (0)) a filled circle or unfilled circle (ring): selecting center and dragging to radius length OR inputting center coordinates (x,y), and inputting radius length.
+  
 * **CaptureBugBoundary**: These three scripts, when used together, allow the user to capture and export inner and/or outer boundary cell coordinates to a csv file, of *Larger than Life "bugs"*. The .txt file contained within this directory provide a detailed guide to the use of these scripts for this desired purpose.
 
 ## Contributing
