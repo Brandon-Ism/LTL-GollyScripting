@@ -31,6 +31,7 @@ The Lua scripts included in this repository serve various purposes, from creatin
 
 - **Feature 1:** One of the core features of this collection of Lua scripts is the set of tools that empower users to create and manipulate shapes within the Golly environment. These tools enable users to draw and erase various geometric shapes, including squares, rectangles, circles, and rings, using live (1) and dead (0) cells.
 - **Feature 2:** *Boundary Capture and Export for "Bugs"*: This feature is a set of Lua scripts that work collaboratively to capture and export the inner or outer boundary coordinates of a "bug" within the Larger Than Life cellular automata. The primary goal is to facilitate in-depth analysis, mathematical computations, and research on these complex automata patterns.
+- **Feature 3:** *Color Visualization of Cell Ages*: The Colors_Overlay directory introduces a sophisticated Lua script, ColorStepTorusOverlay.lua, paired with an RGB Color Selector web app, enhancing the Golly cellular automaton experience. The script allows users to dynamically color cells based on their ages, offering a vivid and evolving view of cellular patterns. The accompanying RGB Color Selector web app streamlines the process of choosing custom colors, ensuring a seamless and user-friendly experience. Together, these tools elevate the analysis and visual representation of cellular automata, making them invaluable for both enthusiasts and researchers in the field.
 
 Whether you're a seasoned Golly user or just starting to explore the world of cellular automata, these scripts aim to simplify your workflow and enhance your research experience.
 
@@ -70,6 +71,8 @@ To get started with these Lua scripts tailored for Golly, follow these steps:
 * **EraseCircle-Menu.lua**: Presents user with options to draw (dead (0)) a filled circle or unfilled circle (ring): selecting center and dragging to radius length OR inputting center coordinates (x,y), and inputting radius length.
   
 * **CaptureBugBoundary**: These three scripts, when used together, allow the user to capture and export inner and/or outer boundary cell coordinates to a csv file, of *Larger than Life "bugs"*. The .txt file contained within this directory provide a detailed guide to the use of these scripts for this desired purpose.
+
+* **Color_Step_Overlay.lua**: This script offers an immersive experience in cellular automata visualization within Golly. It prompts users to define a custom color palette and optionally transform a selected area into a torus. The script then steps through cellular generations, applying the user-defined colors based on cell ages. This tool is ideal for users who wish to add depth and vibrancy to their automata explorations or for researchers needing detailed visual analysis.
 
 ## Contributing
 
