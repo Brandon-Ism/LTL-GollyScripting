@@ -30,8 +30,8 @@ local function get_speed_and_period()
             if h == hashlist[pos] then
                 local rect = boxlist[pos]
                 local period = tonumber(g.getgen()) - genlist[pos]
-                local deltax = math.abs(rect[1] - pbox[1])
-                local deltay = math.abs(rect[2] - pbox[2])
+                local deltax = rect[1] - pbox[1]
+                local deltay = rect[2] - pbox[2]
                 return true, period, deltax, deltay
             elseif h < hashlist[pos] then
                 break
@@ -83,13 +83,25 @@ local function calculate_jitter_factor(distances, tau)
 end
 -----------------------------------------------------------------------------------------------
 
-
 -- Function to calculate distance from a point to the line.
 local function calculate_distance_from_line(cx, cy, initial_cx, initial_cy, final_cx, final_cy)
+--[[
     local A = final_cy - initial_cy
     local B = initial_cx - final_cx
     local C = final_cx*initial_cy - final_cy*initial_cx
-    return math.abs(A*cx + B*cy + C) / math.sqrt(A^2 + B^2)
+    return math.abs(A*cx - B*cy + C) / math.sqrt(A^2 + B^2)
+end
+]]--
+    if final_cx == initial_cx then -- if the line of displacement is vertical
+        return math.abs(cx - initial_cx)
+
+    else
+    m = (final_cy - initial_cy)/(final_cx - initial_cx)
+    b = initial_cy - (m * initial_cx)
+    return math.sqrt((((m*(cy-b))-(m^2*cx))^2) / (m^2+1) + (((m*cx)+b-cy)^2) / (m^2+1))
+
+end
+
 end
 -----------------------------------------------------------------------------------------------
 
@@ -114,7 +126,12 @@ end
 -- Function to shift the pattern so its centroid is at (0,0).
 local function shift_pattern_to_origin(cx, cy)
     local cells = g.getcells(g.getrect())
-    local dx, dy = -math.floor(cx), -math.floor(cy)  -- Calculate shift needed to move centroid to (0,0).
+    
+    --local dx, dy = -math.ceil(cx), -math.ceil(cy)  -- Calculate shift needed to move centroid to (0,0), using floor or ceiling funcs
+
+    -- Use rounding (+0.5) and floor func, to determine best shift to move the centroid to (0,0).
+    local dx, dy = -math.floor(cx + 0.5), -math.floor(cy + 0.5)
+
     for i = 1, #cells, 2 do
         cells[i] = cells[i] + dx
         cells[i+1] = cells[i+1] + dy
@@ -126,21 +143,29 @@ end
 
 -- Main execution function
 local function main()
+
+    g.show("CALCULATING SPEED AND PERIOD & CENTRALIZING PATTERN...")
+
+
     -- Get the period, delta x, and delta y from the adapted oscar.lua logic.
     local tau, deltax, deltay = get_speed_and_period()
 
+    -- Ask the user for the number of cycles to output
+    local cycles = tonumber(g.getstring("Enter the number of cycles to output:", "1", "Number of cycles"))
+    if cycles == nil or cycles < 1 then
+        g.note("Invalid number of cycles. Please enter a positive integer.")
+        return
+    end
+
     -- Calculate initial centroid and ensure a pattern is on the Golly grid.
     g.setgen("0")  -- Ensure the pattern is at its initial state, time = 0.
-    local initial_cx, initial_cy = calculate_centroid()
-    if not initial_cx then
+    local init_cx, init_cy = calculate_centroid()
+    if not init_cx then
         g.note("Pattern is empty.")
         return
     end
 
-    shift_pattern_to_origin(initial_cx, initial_cy) -- Shift pattern to be centered about (0,0).
-
-    -- Recalculate centroid after shifting.
-    local shifted_cx, shifted_cy = calculate_centroid()
+    shift_pattern_to_origin(init_cx, init_cy) -- Shift pattern to be centered about (0,0).
 
     initial_cx, initial_cy = calculate_centroid() --Recalculate intitial x,y from centralized pattern.
 
@@ -148,26 +173,41 @@ local function main()
     local data_table = {}
     local distances = {}
 
+    local tau_cx, tau_cy
+
     -- Iterate through each generation up to tau to calculate centroids and distances
-    g.setgen("0") -- Reset to initial state for accurate measurement
-    for t = 0, tau do
+      g.setgen("0") -- Reset to initial state for accurate measurement
+    for t = 0, tau * cycles - 1 do
+
+        if t == tau-1 then
+        tau_cx, tau_cy = calculate_centroid()
+        end
+
+        g.show(" JITTER FACTOR IS BEING CALCULATED...\n")
         local cx, cy = calculate_centroid()
-        local distance = calculate_distance_from_line(cx, cy, initial_cx, initial_cy, initial_cx + deltax, initial_cy + deltay)
+        local distance
+        if t < tau then  -- Only calculate distance for the first cycle for jitter factor
+            distance = calculate_distance_from_line(cx, cy, initial_cx, initial_cy, initial_cx+deltax, initial_cy+deltay)
+            table.insert(distances, distance)
+        else
+            -- For additional cycles, calculate distance but do not add to distances array for jitter factor calculation
+            distance = calculate_distance_from_line(cx, cy, initial_cx + (deltax * ((t // tau) % cycles)), initial_cy + (deltay * ((t // tau) % cycles)), initial_cx + deltax + (deltax * ((t // tau) % cycles)), initial_cy + deltay + (deltay * ((t // tau) % cycles)))
+        end
         table.insert(data_table, {t, cx, cy, distance})
-        table.insert(distances, distance)
         g.run(1)
     end
 
     local jitter_factor = calculate_jitter_factor(distances, tau)
     local summ_distances = calculate_summ_distances(distances)
     
-    local line_of_displacement = "Line: (" .. initial_cx .. ", " .. initial_cy .. ") to (" .. (initial_cx + deltax) .. ", " .. (initial_cy + deltay) .. ")" 
+    local line_of_displacement = "Line: (" .. initial_cx .. ", " .. initial_cy .. ") to (" .. tau_cx .. ", " .. tau_cy .. ")" 
 
     -- Display metrics with a g.note
     g.note("Period: " .. tau ..
-           "\nDelta X: " .. deltax ..
-           "\nDelta Y: " .. deltay ..
+           "\nDelta X: " .. math.abs(deltax) ..
+           "\nDelta Y: " .. math.abs(deltay) ..
            "\nJitter Factor: " .. jitter_factor)
+
 
     -- Save to CSV file titled 'jitter_bug_data.csv'
     local csv_path = g.getdir("app") .. "jitter_bug_data.csv"
@@ -180,11 +220,11 @@ local function main()
     -- Write header with line of displacement and jitter factor
     file:write("Time,Centroid X,Centroid Y,Distance from Line\n")
     file:write(",,,,,Jitter Factor: " .. jitter_factor .. "\n")
-    file:write(",,,,,Line of Displacement: " .. line_of_displacement .. "\n")
+    file:write(',,,,,"Line of Displacement: ' .. line_of_displacement .. '"\n')
     file:write(",,,,,Sum of Distances: " .. summ_distances .. "\n")
     file:write(",,,,,Period: " .. tau .."\n")
-    file:write(",,,,,Delta X: " .. deltax .. "\n")
-    file:write(",,,,,Delta Y: " .. deltay .. "\n")
+    file:write(",,,,,Delta X: " .. math.abs(deltax) .. "\n")
+    file:write(",,,,,Delta Y: " .. math.abs(deltay) .. "\n")
 
     for _, row in ipairs(data_table) do
         file:write(table.concat(row, ",") .. "\n")
