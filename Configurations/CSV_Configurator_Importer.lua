@@ -1,24 +1,22 @@
 --[[
-    This script automates the creation of 'initial configurations' on a custom-named Golly grid, based on data from a CSV file. These configurations comprise circles and ellipses, representing live and dead cells.
+    This script automates the creation of 'initial configurations' on a custom-named Golly grid, based on data from a CSV file. These configurations comprise circles, ellipses, and rectangles representing live and dead cells.
 
     Steps for the user:
     1. Name the grid: A custom name for the new grid can be entered for identification and reference.
     2. Configuration count and spacing: The user specifies the desired number of configurations they have entered into the CSV file and the horizontal center-to-center spacing between them.
     3. CSV Input: Instead of manual entry, the script reads configuration details from a CSV file, with each line defining one configuration in the following format:
-        - Shape of live cells ('C' for Circle, 'E' for Ellipse)
-        - Radius for circles or axis lengths for ellipses of live cells
+        - Shape of live cells ('C' for Circle, 'E' for Ellipse, 'R' for Rectangle)
+        - Radius for circles, axis lengths for ellipses, or dimensions for rectangles of live cells
         - 'Y Setback' indicating the vertical displacement for the center of the dead cells from the live ones
-        - Shape of dead cells ('C' for Circle, 'E' for Ellipse)
-        - Radius for circles or axis lengths for ellipses of dead cells
+        - Shape of dead cells ('C' for Circle, 'E' for Ellipse, 'R' for Rectangle)
+        - Radius for circles, axis lengths for ellipses, or dimensions for rectangles of dead cells
 
         The first row of the CSV is assumed to be the header and is ignored.
 
     CSV File Format Example:
-        [shape of live cells] , [radius or axis lengths of live shape] , [y setback] , [shape of dead cells] , [radius or axis lengths of dead shape]
+        [shape of live cells] , [radius or axis lengths or dimensions of live shape] , [y setback] , [shape of dead cells] , [radius or axis lengths or dimensions of dead shape]
         example entry: C,23,6,E,9 7 = Circle of live cells with radius 23, y setback of 6, with ellipse of dead cells with major axis = 9, and minor axis = 7.
-        ...
         
-
 
     Purpose:
     This script is designed to streamline the process of generating and testing initial cell arrangements in Golly's environment. 
@@ -35,7 +33,7 @@
 
 local g = golly() -- Initialize Golly library
 
-local filepath = 'C:/Users/brand/OneDrive/Desktop/Golly/Initial Configurations/Live Circles/Live Circles, Dead Circles/init_config_live_rad_25_setback_11to16.csv'
+local filepath = '/dir/.../myfile.csv'
 -----------------------------------------------------------------------------------------------
 
 -- Prompt user for grid name and clear the grid with the custom name
@@ -45,8 +43,9 @@ local grid = g.getlayer()
 -----------------------------------------------------------------------------------------------
 
 -- Prompt user for number of configurations to be made and spacing of configurations
-local num_configs = tonumber(g.getstring("Enter the number of configurations:", "1"))
-local spacing = tonumber(g.getstring("Enter the spacing of the configurations (center to center distance):", "60"))
+local num_configs = tonumber(g.getstring("Enter the number of configurations:", "50"))
+local spacing = tonumber(g.getstring("Enter the spacing of the configurations (center to center distance):", "100"))
+local configs_per_row = tonumber(g.getstring("How many configurations per row?", "10"))
 -----------------------------------------------------------------------------------------------
 
 -- Function to draw filled circle
@@ -144,6 +143,17 @@ local function drawFilledEllipse(cx, cy, a, b, state)
 end
 -----------------------------------------------------------------------------------------------
 
+-- Function to draw filled rectangle given center (cx, cy), length l, and width w
+local function drawFilledRectangle(cx, cy, l, w, state)
+    for dx = -math.floor(l / 2), math.ceil(l / 2) - 1 do
+        for dy = -math.floor(w / 2), math.ceil(w / 2) - 1 do
+            g.setcell(cx + dx, cy + dy, state)
+        end
+    end
+    g.update()
+end
+-----------------------------------------------------------------------------------------------
+
 -- Function to split csv name string by a delimiter
 local function split_string(inputstr, sep)
     if sep == nil then
@@ -165,12 +175,20 @@ local function handle_shape(config, x, y, state)
     local shape_dead = config[4]
     local size_dead = config[5]
 
+    if y_setback == nil then
+        g.warn("Invalid y_setback value in configuration. Please ensure proper header in CSV file... " .. table.concat(config, ", "))
+        return
+    end
+
     -- Draw the live shape
     if shape_live:upper() == "C" then -- Handle Circle
         drawFilledCircle(x, y, tonumber(size_live), state)
     elseif shape_live:upper() == "E" then -- Handle Ellipse
         local sizes = split_string(size_live, " ")
         drawFilledEllipse(x, y, tonumber(sizes[1]), tonumber(sizes[2]), state)
+    elseif shape_live:upper() == "R" then -- Handle Rectangle
+        local sizes = split_string(size_live, " ")
+        drawFilledRectangle(x, y, tonumber(sizes[1]), tonumber(sizes[2]), state)
     end
 
     -- Draw the dead shape
@@ -180,6 +198,9 @@ local function handle_shape(config, x, y, state)
     elseif shape_dead:upper() == "E" then -- Ellipse
         local sizes = split_string(size_dead, " ") -- Split major and minor axis by identifying blank space
         drawFilledEllipse(x, dead_y, tonumber(sizes[1]), tonumber(sizes[2]), 0)
+    elseif shape_dead:upper() == "R" then -- Rectangle
+        local sizes = split_string(size_dead, " ")
+        drawFilledRectangle(x, dead_y, tonumber(sizes[1]), tonumber(sizes[2]), 0)
     end
 end
 -----------------------------------------------------------------------------------------------
@@ -196,17 +217,22 @@ file:read()
 -----------------------------------------------------------------------------------------------
 
 -- Loop through each configuration line in the CSV file
-local current_x = 0
+local current_x, current_y = 0, 0
 local config_count = 0
 for line in file:lines() do
     local config = split_string(line, ",")
     if #config >= 5 then
         -- Draw the live shape
-        handle_shape(config, current_x, 0, 1)
+        handle_shape(config, current_x, current_y, 1)
         
         -- Update position for next configuration
-        current_x = current_x + spacing
         config_count = config_count + 1
+        if config_count % configs_per_row == 0 then
+            current_x = 0
+            current_y = current_y + spacing
+        else
+            current_x = current_x + spacing
+        end
 
         -- Stop if script has created the user-specified number of configurations
         if config_count >= num_configs then break end
