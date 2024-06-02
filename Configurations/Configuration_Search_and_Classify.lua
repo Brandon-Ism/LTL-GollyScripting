@@ -1,7 +1,7 @@
 --[[
 
     This script automates the creation, simulation, and sorting of 'initial configurations' on a custom-named Golly grid based on user inputs. 
-    Users specify live and dead cell shapes as circles or ellipses, along with their dimensions. 
+    Users specify live and dead cell shapes as circles, ellipses, or rectangles, along with their dimensions. 
     Each configuration is analyzed for survival and categorized based on its behavior over a user-specified number of time steps. 
     The script handles configurations that exceed a user-defined maximum number of iterations by logging them separately.
 
@@ -13,13 +13,13 @@
         - Rule: Enter the desired rule for the simulation, or leave rule as is or blank.
         - Maximum timeout iterations: Set a limit on the number of iterations for pattern to be classified as timeout, if no other classification occurs.
     3. Define Shapes and Dimensions of Live Sites:
-        - Shape of Live Sites: 'C' for Circle or 'E' for Ellipse.
-        - Dimensions: If a circle, provide the radius. If an ellipse, provide major and minor axis lengths.
+        - Shape of Live Sites: 'C' for Circle, 'E' for Ellipse, 'R' for rectangle. 
+        - Dimensions: If a circle, provide the radius. If an ellipse, provide major and minor axis lengths. If a rectangle, provide length and width.
     4. Setbacks:
         - Setbacks: Define the vertical shift (Y-axis displacement) for dead sites relative to the center of live sites, as bounds (min, max).
     5. Define Shapes and Dimensions of Dead Sites:
-        - Shape of Dead Sites: 'C' for Circle or 'E' for Ellipse.
-        - Dimensions: If a circle, provide the radius. If an ellipse, provide major and minor axis lengths.
+        - Shape of Dead Sites: 'C' for Circle , 'E' for Ellipse, 'R' for rectangle. 
+        - Dimensions: If a circle, provide the radius. If an ellipse, provide major and minor axis lengths. If a rectangle, provide length and width. 
 
     Purpose:
     - This script streamlines the process of generating, simulating, and analyzing initial cell configurations in Golly.
@@ -31,7 +31,7 @@
             - Contains parameters of every initial configuration that was created.
         - 'filename_survive.csv'
             - Contains parameters of initial configurations that were detected as 'stable' after being run, the user-defined number of time steps.
-            - Contains period, vertical displacement, population, and dimensions of the minimal bounding box of the pattern.
+            - Contains period, vertical displacement, population, dimensions of the minimal bounding box of the pattern, and hash value.
         - 'filename_not_survive.csv'
             - Contains parameters of every intital configuration that resulted in zero live cells on the grid, after being run, the user-defined number of time steps.
         - 'filename_still.csv'
@@ -42,6 +42,11 @@
     File Format:
     - Shape of Live Cells, Radius or Axis Lengths of Live Shape, Y Setback, Shape of Dead Cells, Radius or Axis Lengths of Dead Shape
     - Example entry: E,25 20,7,C,10 (Ellipse of live cells with major axis = 25, minor axis = 20, Y setback of 7, with Circle of dead cells with radius = 10).
+
+    NOTE: 
+    - Due to the possibility of assymetry within rectangles shapes of odd/even parameter cominations, symmetry will be rounded to floor integer. 
+    - Larger timesteps in both runtime for classification and runtime error provide results that are classified better (especially with _timeout and _survive), although these time steps may be experimental for the user.
+    - CSV files with '_survive' and '_still' suffixes, include hash values for the purpose of identical pattern recognition.
 
     -- Author: Brandon Ismalej (brandon.ismalej.671@my.csun.edu), Apr 2023.
 ]]
