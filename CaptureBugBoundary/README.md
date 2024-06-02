@@ -1,5 +1,6 @@
 # Capturing Boundary Coordinates of a Bug in Golly 
 
+### For questions or concerns, contact Brandon I. (brandon.ismalej.671@my.csun.edu)
 -----------------------------------------------------------------------------------------------
 ### The following steps of running scripts within the Golly environment allows the user to capture the inner or outer boundary points of a selected bug that is located on the Golly grid.
 -----------------------------------------------------------------------------------------------
@@ -20,7 +21,7 @@
 
 2. Select entire bug using the Golly select tool, located in the tool bar.
 
-3. Run the script : BoundaryCellCapture.lua
+3. Run the script: [BoundaryCellCapture.lua](BoundaryCellCapture.lua)
    Ensure that the desired file name for the CSV file to be created is written into the script
 
    
