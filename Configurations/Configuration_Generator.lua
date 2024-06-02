@@ -28,9 +28,9 @@ local grid = g.getlayer()
 -----------------------------------------------------------------------------------------------
 
 -- Prompt user for number of configurations to be made and spacing of configurations
-local num_configs = tonumber(g.getstring("Enter the number of configurations:", "1"))
-local spacing = tonumber(g.getstring("Enter the spacing of the configurations (center to center distance):", "60"))
-local configs_per_row = tonumber(g.getstring("Enter the number of configurations per row:", "5"))
+local num_configs = tonumber(g.getstring("Enter the number of configurations:", "10"))
+local spacing = tonumber(g.getstring("Enter the spacing of the configurations (center to center distance):", "100"))
+local configs_per_row = tonumber(g.getstring("Enter the number of configurations per row:", "10"))
 -----------------------------------------------------------------------------------------------
 
 -- Function to draw filled circle
