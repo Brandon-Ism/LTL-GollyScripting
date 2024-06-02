@@ -51,7 +51,7 @@ local g = golly() -- Initialize Golly library.
 local gp = require "gplus" -- Import gplus module.
 
 -----------------------------------------------------------------------------------------------
--- Handle inital user parameters for CSV naming, time steps, rule, and timeout limit. 
+-- Handle initial user parameters for CSV naming, time steps, rule, and timeout limit. 
 
 -- User enters CSV filename prefixes. 
 local grid_name = g.getstring("Enter the desired name convention for CSV files:", "InitialConfigurations")
@@ -88,20 +88,24 @@ local configs_per_row = 1
 local shape_live
 local range_radius_live = ""
 local range_axes_live = ""
+local range_rect_live = ""
 local valid_input0 = false
 
--- Determine dead cell configuration based on shape input.
+-- Determine live cell configuration based on shape input.
 while not valid_input0 do
-    shape_live = g.getstring("Would you like a circle or ellipse for the live sites (enter C or E):", "E"):upper()
+    shape_live = g.getstring("Would you like a circle, ellipse, or rectangle for the live sites (enter C, E, or R):", "E"):upper()
 
     if shape_live == "C" then
         range_radius_live = g.getstring("Enter the bounds of radii for the live circle as min,max (e.g., 20,25):", "20,25")
         valid_input0 = true
     elseif shape_live == "E" then
-        range_axes_live = g.getstring("Enter the bounds of major/minor axes for the dead ellipse, major_range,minor_range (e.g., 20,25 20,25):", "20,25 20,25")
+        range_axes_live = g.getstring("Enter the bounds of major/minor axes for the live ellipse, major_range,minor_range (e.g., 20,25 20,25):", "20,25 20,25")
+        valid_input0 = true
+    elseif shape_live == "R" then
+        range_rect_live = g.getstring("Enter the bounds of length/width for the live rectangle, length_range,width_range (e.g., 20,25 10,15):", "20,25 10,15")
         valid_input0 = true
     else
-        g.warn("Invalid shape input. Please enter 'C' for circle or 'E' for ellipse.")
+        g.warn("Invalid shape input. Please enter 'C' for circle, 'E' for ellipse, or 'R' for rectangle.")
     end
 end
 -----------------------------------------------------------------------------------------------
@@ -114,11 +118,12 @@ local range_setback = g.getstring("Enter the bounds of Y setbacks as min,max (e.
 local shape_dead
 local range_radius_dead = ""
 local range_axes_dead = ""
+local range_rect_dead = ""
 local valid_input1 = false
 
 -- Determine dead cell configuration based on shape input.
 while not valid_input1 do
-    shape_dead = g.getstring("Would you like a circle or ellipse for the dead sites (enter C or E):", "C"):upper()
+    shape_dead = g.getstring("Would you like a circle, ellipse, or rectangle for the dead sites (enter C, E, or R):", "C"):upper()
 
     if shape_dead == "C" then
         range_radius_dead = g.getstring("Enter the bounds of radii for the dead circle as min,max (e.g., 5,10):", "5,10")
@@ -126,8 +131,11 @@ while not valid_input1 do
     elseif shape_dead == "E" then
         range_axes_dead = g.getstring("Enter the bounds of major/minor axes for the dead ellipse, major_bounds,minor_bounds (e.g., 5,20 5,20):", "5,20 5,20")
         valid_input1 = true
+    elseif shape_dead == "R" then
+        range_rect_dead = g.getstring("Enter the bounds of length/width for the dead rectangle, length_bounds,width_bounds (e.g., 10,15 5,10):", "10,15 5,10")
+        valid_input1 = true
     else
-        g.warn("Invalid shape input. Please enter 'C' for circle or 'E' for ellipse.")
+        g.warn("Invalid shape input. Please enter 'C' for circle, 'E' for ellipse, or 'R' for rectangle.")
     end
 end 
 -----------------------------------------------------------------------------------------------
@@ -160,9 +168,11 @@ end
 
 local radius_live_min, radius_live_max = 0,0
 local axes_live_min, axes_live_max = {}, {}
+local rect_live_min, rect_live_max = {}, {}
 local setback_min, setback_max = parse_range(range_setback)
 local radius_dead_min, radius_dead_max = 0, 0
 local axes_dead_min, axes_dead_max = {}, {}
+local rect_dead_min, rect_dead_max = {}, {}
 
 if shape_live == "C" then
     radius_live_min, radius_live_max = parse_range(range_radius_live)
@@ -173,6 +183,10 @@ elseif shape_live == "E" then
         axes_live_min[j], axes_live_max[j] = min_ax0, max_ax0 
         j = j + 1
     end
+elseif shape_live == "R" then
+    local parts = split_string(range_rect_live, " ")
+    rect_live_min[1], rect_live_max[1] = parse_range(parts[1])
+    rect_live_min[2], rect_live_max[2] = parse_range(parts[2])
 end
 
 
@@ -185,6 +199,10 @@ elseif shape_dead == "E" then
         axes_dead_min[i], axes_dead_max[i] = min_ax, max_ax
         i = i + 1
     end
+elseif shape_dead == "R" then
+    local parts = split_string(range_rect_dead, " ")
+    rect_dead_min[1], rect_dead_max[1] = parse_range(parts[1])
+    rect_dead_min[2], rect_dead_max[2] = parse_range(parts[2])
 end
 
 -----------------------------------------------------------------------------------------------
@@ -201,11 +219,11 @@ local filepath_timeout = g.getdir("app") .. grid_name .. "_timeout.csv"
 local file_timeout = io.open(filepath_timeout, "w")
 
 -- Write headers to CSV files. 
-file_all:write('"' .. g.getrule() .. '"',"\nShape of Live Cells,Radius or Axis Lengths of Live Shape,Y Setback,Shape of Dead Cells,Radius or Axis Lengths of Dead Shape\n")
-file_survive:write('"' .. g.getrule() .. '"',"\nShape of Live Cells,Radius or Axis Lengths of Live Shape,Y Setback,Shape of Dead Cells,Radius or Axis Lengths of Dead Shape,Period,dy,Population, Bound Box Wd, Bound Box Ht\n")
-file_not_survive:write('"' .. g.getrule() .. '"',"\nShape of Live Cells,Radius or Axis Lengths of Live Shape,Y Setback,Shape of Dead Cells,Radius or Axis Lengths of Dead Shape\n")
-file_still:write('"' .. g.getrule() .. '"',"\nShape of Live Cells,Radius or Axis Lengths of Live Shape,Y Setback,Shape of Dead Cells,Radius or Axis Lengths of Dead Shape,Period,dy\n")
-file_timeout: write('"' .. g.getrule() .. '"', "\nShape of Live Cells,Radius or Axis Lengths of Live Shape,Y Setback,Shape of Dead Cells,Radius or Axis Lengths of Dead Shape\n")
+file_all:write('"' .. g.getrule() .. '"',"\nShape of Live Cells,Radius or Axis Lengths or Dimensions of Live Shape,Y Setback,Shape of Dead Cells,Radius or Axis Lengths or Dimensions of Dead Shape\n")
+file_survive:write('"' .. g.getrule() .. '"',"\nShape of Live Cells,Radius or Axis Lengths or Dimensions of Live Shape,Y Setback,Shape of Dead Cells,Radius or Axis Lengths or Dimensions of Dead Shape,Period,dy,Population, Bound Box Wd, Bound Box Ht, Hash Value\n")
+file_not_survive:write('"' .. g.getrule() .. '"',"\nShape of Live Cells,Radius or Axis Lengths or Dimensions of Live Shape,Y Setback,Shape of Dead Cells,Radius or Axis Lengths or Dimensions of Dead Shape\n")
+file_still:write('"' .. g.getrule() .. '"',"\nShape of Live Cells,Radius or Axis Lengths or Dimensions of Live Shape,Y Setback,Shape of Dead Cells,Radius or Axis Lengths or Dimensions of Dead Shape,Period,dy,Hash Value\n")
+file_timeout: write('"' .. g.getrule() .. '"', "\nShape of Live Cells,Radius or Axis Lengths or Dimensions of Live Shape,Y Setback,Shape of Dead Cells,Radius or Axis Lengths or Dimensions of Dead Shape\n")
 -----------------------------------------------------------------------------------------------
 
 -- Function to draw filled circle
@@ -303,6 +321,17 @@ local function drawFilledEllipse(cx, cy, a, b, state)
 end
 -----------------------------------------------------------------------------------------------
 
+-- Function to draw filled rectangle given center (cx, cy), length l, and width w
+local function drawFilledRectangle(cx, cy, l, w, state)
+    for dx = -math.floor(l / 2), math.ceil(l / 2) - 1 do
+        for dy = -math.floor(w / 2), math.ceil(w / 2) - 1 do
+            g.setcell(cx + dx, cy + dy, state)
+        end
+    end
+    g.update()
+end
+-----------------------------------------------------------------------------------------------
+
 -- Function to check survival of configurations after user entered time steps.
 local function check_survival()
     return tonumber( g.getpop() ) > 0  -- Returns true if any cells are alive
@@ -391,81 +420,96 @@ local current_x, current_y, count = 0, 0, 0
 for radius_live = radius_live_min, radius_live_max do
     for major0 = (axes_live_min[1] or 0), (axes_live_max[1] or 0) do
         for minor0 = (axes_live_min[2] or 0), (axes_live_max[2] or 0) do
-            for setback = setback_min, setback_max do
-                for radius_dead = radius_dead_min, radius_dead_max do
-                    for major = (axes_dead_min[1] or 0), (axes_dead_max[1] or 0) do
-                        for minor = (axes_dead_min[2] or 0), (axes_dead_max[2] or 0) do
+            for length0 = (rect_live_min[1] or 0), (rect_live_max[1] or 0) do
+                for width0 = (rect_live_min[2] or 0), (rect_live_max[2] or 0) do
+                    for setback = setback_min, setback_max do
+                        for radius_dead = radius_dead_min, radius_dead_max do
+                            for major = (axes_dead_min[1] or 0), (axes_dead_max[1] or 0) do
+                                for minor = (axes_dead_min[2] or 0), (axes_dead_max[2] or 0) do
+                                    for length = (rect_dead_min[1] or 0), (rect_dead_max[1] or 0) do
+                                        for width = (rect_dead_min[2] or 0), (rect_dead_max[2] or 0) do
 
-                        local live_shape_size, dead_shape_size
+                                            local live_shape_size, dead_shape_size
 
-                        -- Circle live sites.  
-                        if shape_live == "C" then
-                            live_shape_size = tostring(radius_live)
-                            drawFilledCircle(current_x, current_y, radius_live, 1)
-                        else
-                            live_shape_size = major0 .. " " .. minor0
-                            drawFilledEllipse(current_x, current_y, major0, minor0, 1)
-                        end
+                                            -- Circle live sites.  
+                                            if shape_live == "C" then
+                                                live_shape_size = tostring(radius_live)
+                                                drawFilledCircle(current_x, current_y, radius_live, 1)
+                                            elseif shape_live == "E" then
+                                                live_shape_size = major0 .. " " .. minor0
+                                                drawFilledEllipse(current_x, current_y, major0, minor0, 1)
+                                            elseif shape_live == "R" then
+                                                live_shape_size = length0 .. " " .. width0
+                                                drawFilledRectangle(current_x, current_y, length0, width0, 1)
+                                            end
 
-                        -- Ellipse live sites. 
-                        if shape_dead == 'C' then
-                            dead_shape_size = tostring(radius_dead)
-                            drawFilledCircle(current_x, current_y + setback, radius_dead, 0)
-                        else
-                            dead_shape_size = major .. " " .. minor
-                            drawFilledEllipse(current_x, current_y + setback, major, minor, 0)
-                        end
+                                            -- Dead sites. 
+                                            if shape_dead == 'C' then
+                                                dead_shape_size = tostring(radius_dead)
+                                                drawFilledCircle(current_x, current_y + setback, radius_dead, 0)
+                                            elseif shape_dead == "E" then
+                                                dead_shape_size = major .. " " .. minor
+                                                drawFilledEllipse(current_x, current_y + setback, major, minor, 0)
+                                            elseif shape_dead == "R" then
+                                                dead_shape_size = length .. " " .. width
+                                                drawFilledRectangle(current_x, current_y + setback, length, width, 0)
+                                            end
 
-                        -- Write to CSV, all configurations to be simulated.
-                        file_all:write(shape_live, ",", live_shape_size, ",", setback, ",", shape_dead, ",", dead_shape_size, "\n")
+                                            -- Write to CSV, all configurations to be simulated.
+                                            file_all:write(shape_live, ",", live_shape_size, ",", setback, ",", shape_dead, ",", dead_shape_size, "\n")
 
-                        -- Run each pattern simulation for the specified number of steps
-                        g.run(time_steps)
+                                            -- Run each pattern simulation for the specified number of steps
+                                            g.run(time_steps)
 
-                        -- If configuration 'survives' after time steps run, get speed and period. 
-                        if check_survival() then 
-                            local period, dx, dy = get_speed_and_period(max_iterations)
+                                            -- If configuration 'survives' after time steps run, get speed and period. 
+                                            if check_survival() then 
+                                                local period, dx, dy = get_speed_and_period(max_iterations)
 
-                            -- Runtime error, greater than max_iterations. 
-                            if period == nil then
-                                -- Write inital configuration data to '_timeout' CSV file for user reference.
-                                file_timeout:write(shape_live, ",", live_shape_size, ",", setback, ",", shape_dead, ",", dead_shape_size, "\n")
+                                                -- Runtime error, greater than max_iterations. 
+                                                if period == nil then
+                                                    -- Write initial configuration data to '_timeout' CSV file for user reference.
+                                                    file_timeout:write(shape_live, ",", live_shape_size, ",", setback, ",", shape_dead, ",", dead_shape_size, "\n")
 
-                            else
-                                -- Speed and period were successfully determined
-                                local pop = tonumber( g.getpop() ) -- Get current cell population.
+                                                else
+                                                    -- Speed and period were successfully determined
+                                                    local pop = tonumber( g.getpop() ) -- Get current cell population.
 
-                                -- Get dimensions of minimal bounding box. 
-                                local bound_box_wd = get_bounding_box(g.getcells( g.getrect()), "wd")
-                                local bound_box_ht = get_bounding_box(g.getcells( g.getrect()), "ht")
+                                                    -- Get dimensions of minimal bounding box. 
+                                                    local bound_box_wd = get_bounding_box(g.getcells( g.getrect()), "wd")
+                                                    local bound_box_ht = get_bounding_box(g.getcells( g.getrect()), "ht")
+                                                    local hash_val = g.hash(g.getrect())
 
-                                if dy == 0 then -- Pattern determined to be still, has no vertical displacement over time, write to '_still' CSV file. 
-                                    file_still:write(shape_live, ",", live_shape_size, ",", setback, ",", shape_dead, ",", dead_shape_size, ",", period, ",", dy, "\n")
+                                                    if dy == 0 then -- Pattern determined to be still, has no vertical displacement over time, write to '_still' CSV file. 
+                                                        file_still:write(shape_live, ",", live_shape_size, ",", setback, ",", shape_dead, ",", dead_shape_size, ",", period, ",", dy, ",", hash_val, "\n")
 
-                                else
-                                    -- Pattern has survived, and has a period with vertical displacement, successful search for potential spaceship or bug. 
-                                    file_survive:write(shape_live, ",", live_shape_size, ",", setback, ",", shape_dead, ",", dead_shape_size, ",", period, ",", -dy, ",", pop,",", bound_box_wd, ",", bound_box_ht,"\n")
+                                                    else
+                                                        -- Pattern has survived, and has a period with vertical displacement, successful search for potential spaceship or bug. 
+                                                        file_survive:write(shape_live, ",", live_shape_size, ",", setback, ",", shape_dead, ",", dead_shape_size, ",", period, ",", -dy, ",", pop,",", bound_box_wd, ",", bound_box_ht, ",", hash_val, "\n")
+                                                    end
+                                                end
+                                            else
+                                                -- Initial configuration has not survived after timesteps run. 
+                                                file_not_survive:write(shape_live, ",", live_shape_size, ",", setback, ",", shape_dead, ",", dead_shape_size, "\n")
+                                            end
+
+                                            -- Clear the grid and update positions for the next configuration
+                                            g.new(grid_name)
+                                            current_x = current_x + spacing
+                                            count = count + 1
+                                            if count % configs_per_row == 0 then
+                                                current_x = 0
+                                                current_y = current_y + spacing
+                                            end
+                                        end
+                                    end
                                 end
                             end
-                        else
-                            -- Initial configuration has not survived after timesteps run. 
-                            file_not_survive:write(shape_live, ",", live_shape_size, ",", setback, ",", shape_dead, ",", dead_shape_size, "\n")
-                        end
-
-                        -- Clear the grid and update positions for the next configuration
-                        g.new(grid_name)
-                        current_x = current_x + spacing
-                        count = count + 1
-                        if count % configs_per_row == 0 then
-                            current_x = 0
-                            current_y = current_y + spacing
                         end
                     end
                 end
             end
         end
     end
-end
 end
 -----------------------------------------------------------------------------------------------
 
