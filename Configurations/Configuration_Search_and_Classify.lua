@@ -219,11 +219,11 @@ local filepath_timeout = g.getdir("app") .. grid_name .. "_timeout.csv"
 local file_timeout = io.open(filepath_timeout, "w")
 
 -- Write headers to CSV files. 
-file_all:write('"' .. g.getrule() .. '"',"\nShape of Live Cells,Radius or Axis Lengths or Dimensions of Live Shape,Y Setback,Shape of Dead Cells,Radius or Axis Lengths or Dimensions of Dead Shape\n")
-file_survive:write('"' .. g.getrule() .. '"',"\nShape of Live Cells,Radius or Axis Lengths or Dimensions of Live Shape,Y Setback,Shape of Dead Cells,Radius or Axis Lengths or Dimensions of Dead Shape,Period,dy,Population, Bound Box Wd, Bound Box Ht, Hash Value\n")
-file_not_survive:write('"' .. g.getrule() .. '"',"\nShape of Live Cells,Radius or Axis Lengths or Dimensions of Live Shape,Y Setback,Shape of Dead Cells,Radius or Axis Lengths or Dimensions of Dead Shape\n")
-file_still:write('"' .. g.getrule() .. '"',"\nShape of Live Cells,Radius or Axis Lengths or Dimensions of Live Shape,Y Setback,Shape of Dead Cells,Radius or Axis Lengths or Dimensions of Dead Shape,Period,dy,Hash Value\n")
-file_timeout: write('"' .. g.getrule() .. '"', "\nShape of Live Cells,Radius or Axis Lengths or Dimensions of Live Shape,Y Setback,Shape of Dead Cells,Radius or Axis Lengths or Dimensions of Dead Shape\n")
+file_all:write('"' .. g.getrule() .. '"',"\nShape of Live Cells,Dimensions of Live Shape,Y Setback,Shape of Dead Cells,Dimensions of Dead Shape\n")
+file_survive:write('"' .. g.getrule() .. '"',"\nShape of Live Cells,Dimensions of Live Shape,Y Setback,Shape of Dead Cells,Dimensions of Dead Shape,Period,dy,Population, Bound Box Wd, Bound Box Ht, Hash Value\n")
+file_not_survive:write('"' .. g.getrule() .. '"',"\nShape of Live Cells,Dimensions of Live Shape,Y Setback,Shape of Dead Cells,Dimensions of Dead Shape\n")
+file_still:write('"' .. g.getrule() .. '"',"\nShape of Live Cells,Dimensions of Live Shape,Y Setback,Shape of Dead Cells,Dimensions of Dead Shape,Period,dy,Hash Value\n")
+file_timeout: write('"' .. g.getrule() .. '"', "\nShape of Live Cells,Dimensions of Live Shape,Y Setback,Shape of Dead Cells,Dimensions of Dead Shape\n")
 -----------------------------------------------------------------------------------------------
 
 -- Function to draw filled circle
