@@ -1,11 +1,11 @@
 --[[
-    This script assists users in automating the creation of 'initial configurations' on a custom-named Golly grid. These configurations consist of circles and ellipses that represent live and dead cells.
+    This script assists users in automating the creation of 'initial configurations' on a custom-named Golly grid. These configurations consist of circles, ellipses, and rectangles that represent live and dead cells.
 
     Steps for the user:
     1. Name the grid: A custom name for the new grid can be entered for identification and reference.
     2. Configuration count and spacing: User specifies the number of configurations and the horizontal center-to-center spacing between them.
     3. Define configurations: For each configuration, the user will:
-       - Select a shape (circle or ellipse) for the live cells and provide dimensions (radius for circles, axis lengths for ellipses).
+       - Select a shape (circle, ellipse, or rectangle) for the live cells and provide dimensions (radius for circles, axis lengths for ellipses, length and width for rectangles).
        - Enter a 'Y Setback' value, which determines the vertical offset for the center of dead sites relative to the center of the live sites.
        - Select a shape for the dead sites and provide dimensions, similar to the live sites.
 
@@ -30,6 +30,7 @@ local grid = g.getlayer()
 -- Prompt user for number of configurations to be made and spacing of configurations
 local num_configs = tonumber(g.getstring("Enter the number of configurations:", "1"))
 local spacing = tonumber(g.getstring("Enter the spacing of the configurations (center to center distance):", "60"))
+local configs_per_row = tonumber(g.getstring("Enter the number of configurations per row:", "5"))
 -----------------------------------------------------------------------------------------------
 
 -- Function to draw filled circle
@@ -127,12 +128,23 @@ local function drawFilledEllipse(cx, cy, a, b, state)
 end
 -----------------------------------------------------------------------------------------------
 
+-- Function to draw filled rectangle given center (cx, cy), length l, and width w
+local function drawFilledRectangle(cx, cy, l, w, state)
+    for dx = -math.floor(l / 2), math.ceil(l / 2) - 1 do
+        for dy = -math.floor(w / 2), math.ceil(w / 2) - 1 do
+            g.setcell(cx + dx, cy + dy, state)
+        end
+    end
+    g.update()
+end
+-----------------------------------------------------------------------------------------------
+
 -- Function to handle drawing based on user input
 local function handle_shape(config_num, x, y, state, cell_type)
-    local prompt_message = "Config. #" .. config_num .. ": Would you like a Circle or Ellipse for the " .. cell_type .. " sites? Enter 'C' or 'E'. :"
+    local prompt_message = "Config. #" .. config_num .. ": Would you like a Circle, Ellipse, or Rectangle for the " .. cell_type .. " sites? Enter 'C', 'E', or 'R'. :"
 
     local shape_type = g.getstring(prompt_message, "C")
-    shape_type = shape_type:upper() -- Turn all user input letters into captial case
+    shape_type = shape_type:upper() -- Turn all user input letters into capital case
 
     local size
     if shape_type == "C" then -- Handle Circle
@@ -149,7 +161,16 @@ local function handle_shape(config_num, x, y, state, cell_type)
         local minor = tonumber(g.getstring(minor_axis_prompt, "20"))
         if major and minor then -- Check if major and minor are not nil
             drawFilledEllipse(x, y, major, minor, state)
-            size = major
+            size = major .. " " .. minor
+        end
+    elseif shape_type == "R" then -- Handle Rectangle
+        local length_prompt = "Config. #" .. config_num .. ": Enter the length for the " .. cell_type .. " rectangle:"
+        local width_prompt = "Config. #" .. config_num .. ": Enter the width for the " .. cell_type .. " rectangle:"
+        local length = tonumber(g.getstring(length_prompt, "30"))
+        local width = tonumber(g.getstring(width_prompt, "15"))
+        if length and width then -- Check if length and width are not nil
+            drawFilledRectangle(x, y, length, width, state)
+            size = length .. " " .. width
         end
     else -- If invalid character entered, circle will be used by default.
         g.warn("Invalid shape type. Circle will be used.")
@@ -164,19 +185,24 @@ end
 -----------------------------------------------------------------------------------------------
 
 -- Loop through each configuration with spacing
-local current_x = 0
+local current_x, current_y = 0, 0
 for i = 1, num_configs do
     -- Live sites
-    local live_offset = handle_shape(i, current_x, 0, 1, "live")
+    local live_size = handle_shape(i, current_x, current_y, 1, "live")
     
     -- Dead sites
-    local dead_setback_x =  0 -- Prompt for X setback is omitted because it's not currently used for specific configs.
     local dead_setback_y_prompt = "Config. #" .. i .. ": Enter the Y setback for dead sites:"
     local dead_setback_y =  tonumber(g.getstring(dead_setback_y_prompt, "5"))
-    handle_shape(i, current_x + dead_setback_x, dead_setback_y, 0, "dead")
+    handle_shape(i, current_x, current_y + dead_setback_y, 0, "dead")
     
     -- Update position for next configuration
-    current_x = current_x + spacing
+    if i % configs_per_row == 0 then
+        current_x = 0
+        current_y = current_y + spacing
+    else
+        current_x = current_x + spacing
+    end
+    g.update()
 end
 -----------------------------------------------------------------------------------------------
 
