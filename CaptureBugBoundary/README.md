@@ -1,6 +1,5 @@
 # Capturing Boundary Coordinates of a Bug in Golly 
 
-### For questions or concerns, contact Brandon I. (brandon.ismalej.671@my.csun.edu)
 -----------------------------------------------------------------------------------------------
 ### The following steps of running scripts within the Golly environment allows the user to capture the inner or outer boundary points of a selected bug that is located on the Golly grid.
 -----------------------------------------------------------------------------------------------
