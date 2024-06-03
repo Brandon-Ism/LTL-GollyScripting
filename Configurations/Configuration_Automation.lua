@@ -8,13 +8,14 @@
     2. Shape and Dimensions: Users define whether the live and dead sites on the grid will be circles or ellipses and provide the respective dimensions:
         - If a circle, a radius is required.
         - If an ellipse, major and minor axis lengths are needed.
+        - If a rectangle, length and widths are needed. 
     3. Setbacks and Spacing: The user specifies the vertical setback (Y-axis displacement between live and dead cells) and the horizontal spacing between consecutive configurations (center-to-center distance).
     4. Configuration Rows: Users can determine how many configurations should be placed per row on the grid.
 
     Input Details:
-    - Shape of Live Sites: 'C' for Circle or 'E' for Ellipse. Dimensions for circles or ellipses are prompted based on this choice.
+    - Shape of Live Sites: 'C' for Circle, 'E' for Ellipse, or 'R' for Rectangle. Dimensions for circles or ellipses are prompted based on this choice.
     - Setbacks: Defined as a range (min,max), determining the vertical shift for dead sites relative to live ones.
-    - Shape of Dead Sites: Similarly, 'C' for Circle or 'E' for Ellipse, with dimensions prompted accordingly.
+    - Shape of Dead Sites: Similarly, 'C' for Circle, 'E' for Ellipse, or 'R' for Rectangle, with dimensions prompted accordingly.
     - Configurations Per Row: Specifies how many configurations to place per row before moving to a new row, enhancing the visual organization on the grid.
 
     Example Interaction:
@@ -51,6 +52,9 @@ local g = golly() -- Initialize Golly library.
 -- Ask user for grid name.
 local grid_name = g.getstring("Enter the desired name for this grid and CSV file:", "Initial Configurations")
 g.new(grid_name) -- Create a new grid with desired name.
+
+-- Get the current rule of the grid.
+local current_rule = g.getrule()
 -----------------------------------------------------------------------------------------------
 
 -- Assign user parameters as script variables.
@@ -125,7 +129,7 @@ end
 local filepath = g.getdir("app") .. grid_name .. ".csv" -- Save as user provided grid name, to the directory in which Golly is in.
 local file = io.open(filepath, "w")
 -- Format of CSV file
-file:write("Shape of Live Cells,Radius or Axis Lengths or Dimensions of Live Shape,Y Setback,Shape of Dead Cells,Radius or Axis Lengths or Dimensions of Dead Shape\n")
+file:write('"' .. g.getrule() .. '"',"\nShape of Live Cells,Radius or Axis Lengths or Dimensions of Live Shape,Y Setback,Shape of Dead Cells,Radius or Axis Lengths or Dimensions of Dead Shape\n")
 -----------------------------------------------------------------------------------------------
 
 -- Function to draw filled circle
