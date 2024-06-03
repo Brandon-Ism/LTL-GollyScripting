@@ -128,6 +128,7 @@ end
 -- CSV file setup
 local filepath = g.getdir("app") .. grid_name .. ".csv" -- Save as user provided grid name, to the directory in which Golly is in.
 local file = io.open(filepath, "w")
+
 -- Format of CSV file
 file:write('"' .. g.getrule() .. '"',"\nShape of Live Cells,Radius or Axis Lengths or Dimensions of Live Shape,Y Setback,Shape of Dead Cells,Radius or Axis Lengths or Dimensions of Dead Shape\n")
 -----------------------------------------------------------------------------------------------
