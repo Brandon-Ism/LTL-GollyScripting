@@ -16,6 +16,7 @@
     CSV File Format Example:
         [shape of live cells] , [radius or axis lengths or dimensions of live shape] , [y setback] , [shape of dead cells] , [radius or axis lengths or dimensions of dead shape]
         example entry: C,23,6,E,9 7 = Circle of live cells with radius 23, y setback of 6, with ellipse of dead cells with major axis = 9, and minor axis = 7.
+        example entry: R,27 29,5,C,10 = Rectangle of live cells length 27, width 29. y setback of 5. Circle of dead cells with radius = 10.
         
 
     Purpose:
