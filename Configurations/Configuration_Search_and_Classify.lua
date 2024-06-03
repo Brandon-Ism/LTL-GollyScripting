@@ -465,7 +465,6 @@ for radius_live = radius_live_min, radius_live_max do
 
                                             -- Run each pattern simulation for the specified number of steps
                                             g.run(time_steps)
-                                            g.update()
 
                                             -- If configuration 'survives' after time steps run, get speed and period. 
                                             if check_survival() then 
