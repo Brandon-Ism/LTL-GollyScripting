@@ -482,7 +482,15 @@ for radius_live = radius_live_min, radius_live_max do
                                                     -- Get dimensions of minimal bounding box. 
                                                     local bound_box_wd = get_bounding_box(g.getcells( g.getrect()), "wd")
                                                     local bound_box_ht = get_bounding_box(g.getcells( g.getrect()), "ht")
-                                                    local hash_val = g.hash(g.getrect())
+                                                    
+                                                    -- Calculate hash value within a protected cell
+                                                    local success, hash_val = pcall(function() return g.hash(g.getrect()) end)
+
+                                                    if not success or hash_val == nil then
+                                                        -- Skip hash value if there is an error, move onto next configuration
+                                                        print("Error calculating hash value for current pattern, skipping hash value for this configuration.")
+                                                        hash_val = "N/A"
+                                                    end
 
                                                     if dy == 0 then -- Pattern determined to be still, has no vertical displacement over time, write to '_still' CSV file. 
                                                         file_still:write(shape_live, ",", live_shape_size, ",", setback, ",", shape_dead, ",", dead_shape_size, ",", period, ",", dy, ",", hash_val, "\n")
