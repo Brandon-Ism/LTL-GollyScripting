@@ -488,8 +488,8 @@ for radius_live = radius_live_min, radius_live_max do
 
                                                     if not success or hash_val == nil then
                                                         -- Skip hash value if there is an error, move onto next configuration
-                                                        print("Error calculating hash value for current pattern, skipping hash value for this configuration.")
-                                                        hash_val = "N/A"
+                                                        g.show("Error calculating hash value for current pattern, skipping hash value for this configuration.")
+                                                        hash_val = 0
                                                     end
 
                                                     if dy == 0 then -- Pattern determined to be still, has no vertical displacement over time, write to '_still' CSV file. 
