@@ -18,73 +18,132 @@
     - The script operates on the selected area and requires user input for colors and other options.
 
 Author: Brandon Ismalej (brandon.ismalej.671@my.csun.edu), Jan 2024.
+Updated: Sept 22, 2024
 ]]
 
 local g = golly()
 local ov = g.overlay 
 -----------------------------------------------------------------------------------------------
 
-local function make_torus()
+-- Centralized color definitions table
+local color_definitions = {
+    ["red"] = "255 0 0",
+    ["pink"] = "255 192 203",
+    ["purple"] = "128 0 128",
+    ["magenta"] = "255 0 255",
+    ["blue"] = "0 0 255",
+    ["light blue"] = "173 216 230",
+    ["white"] = "255 255 255",
+    ["green"] = "0 255 0",
+    ["cyan"] = "0 255 255",
+    ["orange"] = "255 165 0",
+    ["yellow"] = "255 255 0",
+    ["black"] = "0 0 0",
+    ["gray"] = "128 128 128",
+    ["silver"] = "192 192 192",
+    ["gold"] = "255 215 0",
+    ["forest green"] = "34 139 34",  -- Added new color "forest green"
+}
 -----------------------------------------------------------------------------------------------
+
+-- Function to present color palettes to the user.
+local function show_palette_options(numcolors)
+    local palettes = {
+        ["1"] = {
+            "a) Red", 
+            "b) Blue", 
+            "c) Green", 
+            "d) Enter your own RGB values"
+        },
+        ["2"] = {
+            "a) Red, Blue",
+            "b) Green, Yellow",
+            "c) Cyan, Magenta",
+            "d) Enter your own RGB values"
+        },
+        ["3"] = {
+            "a) Red, Green, Blue",
+            "b) Cyan, Magenta, Yellow",
+            "c) Black, White, Gray",
+            "d) Enter your own RGB values"
+        },
+        ["4"] = {
+            "a) Red, Pink, Purple, Magenta",
+            "b) Blue, Light Blue, White, Green",
+            "c) Cyan, Orange, Yellow, Green",
+            "d) Black, White, Gray, Silver",
+            "e) Enter your own RGB values"
+        },
+        -- Add more for 5-8 color palettes as needed
+    }
+    
+    -- Show the palette options based on the number of colors selected
+    local options = palettes[tostring(numcolors)]
+    if not options then
+        return nil
+    end
+
+    local palette_string = "Choose a color palette or enter your own RGB values:\n"
+    for _, option in ipairs(options) do
+        palette_string = palette_string .. option .. "\n"
+    end
+    
+    -- Get the user's choice
+    local choice = g.getstring(palette_string, "", "Palette Choice")
+    return choice:lower()  -- Convert to lowercase for easier handling
+end
+-----------------------------------------------------------------------------------------------
+
 -- This is the make-torus.lua script from Golly. 
 -- Use the current selection to create a toroidal universe.
 -- Author: Andrew Trevorrow (andrew@trevorrow.com), Apr 2016.
 
-local g = golly()
+local function make_torus()
+    -- Get the current selection.
+    local selrect = g.getselrect()
 
-local selrect = g.getselrect()
-if #selrect == 0 then g.exit("There is no selection.") end
-
-local x, y, wd, ht = table.unpack(selrect)
-local selcells = g.getcells(selrect)
-
-if not g.empty() then
-    g.clear(0)
-    g.clear(1)
-end
-
--- get current rule, remove any existing suffix, then add new suffix
-local rule = g.getrule()
-rule = rule:match("^(.+):") or rule
-g.setrule(string.format("%s:T%d,%d", rule, wd, ht))
-
-local newx = -math.floor(wd/2)
-local newy = -math.floor(ht/2)
-selrect[1] = newx
-selrect[2] = newy
-g.select(selrect)
-if #selcells > 0 then g.putcells(selcells, newx - x, newy - y) end
-g.fitsel()
-
------------------------------------------------------------------------------------------------
-end -- end of make_torus()
-
------------------------------------------------------------------------------------------------
-
--- Function to ask the user if they require a torus to be created.
-local function ask_user_for_torus()
-    while true do
-        -- Get user response with a prompt.
-        local response = g.getstring("Do you require a torus be created from your selection? (Y/N)", "", "Torus Prompt")
-        response = response:upper()  -- Convert response to upper case for consistency
-
-        -- Return true for 'Y' (yes) or false for 'N' (no).
-        if response == "Y" then
-            return true
-        elseif response == "N" then
-            return false
-        else
-            -- Notify the user to enter a valid response if neither Y nor N is entered.
-            g.note("Please enter 'Y' for Yes or 'N' for No.")
-        end
+    -- If no selection is made, show a message and exit the script.
+    if #selrect == 0 then
+        g.exit("There is no selection. Please select an area before running the script. A torus will automatically be created from your selection.")
     end
+
+    -- Unpack the selection coordinates and size.
+    local x, y, wd, ht = table.unpack(selrect)
+    local selcells = g.getcells(selrect)
+
+    -- Clear the grid if it's not empty.
+    if not g.empty() then
+        g.clear(0)
+        g.clear(1)
+    end
+
+    -- Get the current rule, remove any existing suffix, and add the toroidal suffix.
+    local rule = g.getrule()
+    rule = rule:match("^(.+):") or rule
+    g.setrule(string.format("%s:T%d,%d", rule, wd, ht))
+
+    -- Adjust the selection to be centered on the grid.
+    local newx = -math.floor(wd / 2)
+    local newy = -math.floor(ht / 2)
+    selrect[1] = newx
+    selrect[2] = newy
+    g.select(selrect)
+
+    -- Place the original cells in the new selection.
+    if #selcells > 0 then
+        g.putcells(selcells, newx - x, newy - y)
+    end
+
+    -- Fit the selection in the viewport.
+    g.fitsel()
 end
 
--- Execute the make_torus function if the user confirms.
-if ask_user_for_torus() then
-    make_torus()
-end
+-----------------------------------------------------------------------------------------------
+-- Automatically make a torus without asking the user for confirmation.
+make_torus()
 
+-- Clone the layer after the torus is created
+local cloneindex = g.clone()
 -----------------------------------------------------------------------------------------------
 
 -- Function to prompt the user for RGB values.
@@ -97,21 +156,56 @@ end
 -----------------------------------------------------------------------------------------------
 
 -- Prompt the user to specify the number of colors they wish to use.
-local numcolors = tonumber(g.getstring("Input the number of colors you would like to use. ", "8", "Number of Colors"))
+local numcolors = tonumber(g.getstring("Input the number of colors you would like to use. ", "4", "Number of Colors"))
 if not numcolors or numcolors < 1 then 
     g.exit("Invalid number of colors.") 
 end
 
 -----------------------------------------------------------------------------------------------
 
--- Collect color values from the user and store them in a table.
+-- Show the preset color palette options to the user based on their color choice.
+local palette_choice = show_palette_options(numcolors)
+
+-- Collect color values from the preset palette or let the user input custom RGB values.
 local colors = {}
-for i = 1, numcolors do
-    local r, g, b = get_rgb("Enter RGB values for COLOR # " .. i .. " separated by spaces (e.g., '255 0 0' for red):")
-    if not r or not g or not b then 
-        g.exit("Invalid RGB values for color " .. i .. ".") 
+if palette_choice == "e" or numcolors > 8 then
+    -- If user wants to enter their own colors or if more than 8 colors, get RGB values from user
+    for i = 1, numcolors do
+        local r, g, b = get_rgb("Enter RGB values for COLOR # " .. i .. " separated by spaces (e.g., '255 0 0' for red):")
+        if not r or not g or not b then 
+            g.exit("Invalid RGB values for color " .. i .. ".") 
+        end
+        colors[i] = r .. " " .. g .. " " .. b
     end
-    colors[i] = r .. " " .. g .. " " .. b
+else
+    -- Use preset colors from the palette choice
+    local color_map = {
+        a = {
+            color_definitions["red"],
+            color_definitions["pink"],
+            color_definitions["purple"],
+            color_definitions["magenta"]
+        },
+        b = {
+            color_definitions["blue"],
+            color_definitions["light blue"],
+            color_definitions["white"],
+            color_definitions["green"]
+        },
+        c = {
+            color_definitions["cyan"],
+            color_definitions["orange"],
+            color_definitions["yellow"],
+            color_definitions["green"]
+        },
+        d = {
+            color_definitions["black"],
+            color_definitions["white"],
+            color_definitions["gray"],
+            color_definitions["silver"]
+        }
+    }
+    colors = color_map[palette_choice] or {}
 end
 
 -----------------------------------------------------------------------------------------------
@@ -263,6 +357,3 @@ while true do
     -- Sleep for a short duration to keep the loop responsive and avoid hogging CPU.
     g.sleep(5)
 end
-
-
-
