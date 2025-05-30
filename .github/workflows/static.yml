@@ -26,4 +26,4 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: gh-pages
           # adjust to where your tool lives
-          publish_dir: ./Jitter_Bugs/jitter-centroid-plot-tool
+          publish_dir: .
