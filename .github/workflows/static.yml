@@ -1,18 +1,29 @@
-name: Deploy static content to GitHub Pages
+# .github/workflows/gh-pages.yml
+name: Deploy Jitter-Bug Tool
 
 on:
   push:
     branches:
       - main
 
+# Give the GITHUB_TOKEN rights to push commits (contents)
+permissions:
+  contents: write
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+        # ensure the checkout uses the GITHUB_TOKEN credentials
+        with:
+          persist-credentials: true
 
-      - name: Deploy to GitHub Pages
+      - name: Deploy to gh-pages
         uses: peaceiris/actions-gh-pages@v3
         with:
+          # this token uses the above permissions
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: .Jitter_Bugs/jitter-centroid-plot-tool
+          publish_branch: gh-pages
+          # adjust to where your tool lives
+          publish_dir: ./Jitter_Bugs/jitter-centroid-plot-tool
