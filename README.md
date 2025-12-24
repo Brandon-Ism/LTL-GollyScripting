@@ -1,95 +1,119 @@
 # LTL-GollyScripting
 
-The purpose of these scripts are to assist a professor in their research of _Larger Than Life_ cellular automata. They serve as tools to manipulate cells on the 2 dimensional grid within the _Golly_ software. These scripts were written in Lua to be tailored for use within the Golly software environment.
+A collection of **Golly** Lua scripts (plus a couple helper tools) to support research and exploration of **Larger Than Life (LTL)** cellular automata: drawing/erasing geometric shapes, exporting boundaries/coordinates to CSV, generating/searching initial configurations, and visualizing/quantifying “jitter bugs”.
 
-## Table of Contents
+## Citation / Published papers
+
+If you use this repository (or derived scripts) in academic work, please **cite the relevant paper(s)** below and/or cite this repo.
+
+- **Published papers**:
+  - B. Ismalej, K. M. Evans, “Automating Large-Scale Detection and Classification of Larger Than Life Cellular Automata Patterns”. 2025 IEEE 15th Annual Computing and Communication Workshop and Conference (CCWC), Jan 6-8, 2025, Las Vegas, NV, USA. [10.1109/CCWC62904.2025.10903710](10.1109/CCWC62904.2025.10903710)
+- **Repository citation**:
+  - Brandon Ismalej, *LTL-GollyScripting*, GitHub repository. 2023. [https://github.com/Brandon-Ism/LTL-GollyScripting](https://github.com/Brandon-Ism/LTL-GollyScripting)
+
+## Table of contents
 
 - [LTL-GollyScripting](#ltl-gollyscripting)
-  - [Table of Contents](#table-of-contents)
-  - [Introduction](#introduction)
-    - [About Golly](#about-golly)
-    - [Purpose of the Scripts](#purpose-of-the-scripts)
-    - [Key Features](#key-features)
-  - [Installation](#installation)
-  - [Scripts](#scripts)
+  - [Citation / Published papers](#citation--published-papers)
+  - [Table of contents](#table-of-contents)
+  - [Quick start](#quick-start)
+  - [Script catalog](#script-catalog)
+    - [Rectangle drawing / erasing](#rectangle-drawing--erasing)
+    - [Circle / ellipse drawing / erasing](#circle--ellipse-drawing--erasing)
+    - [Bug boundary capture + CSV pipeline](#bug-boundary-capture--csv-pipeline)
+    - [Configuration generation / automation / search](#configuration-generation--automation--search)
+    - [Visualization + image export](#visualization--image-export)
+    - [Jitter bug analysis](#jitter-bug-analysis)
+    - [Pattern detection](#pattern-detection)
+    - [Browser tools](#browser-tools)
   - [Contributing](#contributing)
-  - [Licensing](#licensing)
+  - [License](#license)
 
-## Introduction
+## Quick start
 
-Welcome to the LTL-GollyScripting! This repository contains a collection of Lua scripts specially tailored for use with the Golly software. These scripts are designed to assist mathematicians, researchers, and enthusiasts in exploring and conducting research on Larger Than Life cellular automata within the Golly environment.
+- **Run in Golly**:
+  - Put this repo (or selected `.lua` scripts) somewhere convenient.
+  - In Golly, run a script via **File → Run Script…** (or your preferred workflow).
+- **Selections matter**:
+  - Several scripts require a selection created with Golly’s **Select** tool (e.g. boundary capture, overlays, PNG export).
+- **Outputs**:
+  - CSV exports are typically written either to a fixed filename in the script (e.g. `boundary_points.csv`) or into `g.getdir("app")` (Golly’s app directory), depending on the script.
 
-### About Golly
+## Script catalog
 
-[Golly](https://golly.sourceforge.io/) is a powerful and versatile open-source software for simulating and exploring cellular automata. It provides a rich set of features and tools for experimenting with various automaton rules and patterns.
+### Rectangle drawing / erasing
 
-### Purpose of the Scripts
+- **`RectangleScripts/DrawRectangle.lua`**: Draw a filled **live (1)** rectangle by clicking opposite corners (no live preview).
+- **`RectangleScripts/DrawRectangleWithErase.lua`**: Draw a filled **live (1)** rectangle by clicking opposite corners with a **live preview** (preview may overwrite cells while moving).
+- **`RectangleScripts/DrawRectangle-Menu.lua`**: Menu-driven filled **live (1)** rectangle tool: click-and-preview **or** enter coordinates/dimensions.
+- **`RectangleScripts/DrawRectangleWithOutline-Menu.lua`**: Menu-driven rectangle tool: draw filled rectangle **or** rectangle outline using **live (1)** cells.
+- **`RectangleScripts/EraseRectangleWithOutline-Menu.lua`**: Menu-driven rectangle tool that “erases” using **dead (0)** cells: draw filled rectangle **or** rectangle outline.
 
-The Lua scripts included in this repository serve various purposes, from creating specific patterns to capturing elements of certain cellular automaton. They leverage the Golly software's Lua scripting capabilities to make these tasks more efficient and accessible.
+### Circle / ellipse drawing / erasing
 
-### Key Features
+- **`CircleScripts/DrawCircle-Menu.lua`**: Menu-driven circle tool using **live (1)** cells: filled circle **or** ring; click-to-define radius with live preview **or** enter center/radius.
+- **`CircleScripts/EraseCircle-Menu.lua`**: Same UI as above, but draws using **dead (0)** cells (i.e., erase-filled-circle or erase-ring).
+- **`CircleScripts/DrawEllipse-Menu.lua`**: Menu-driven ellipse tool using **live (1)** cells: filled ellipse **or** outline; click-to-define axes with live preview **or** enter center/axes.
+- **`CircleScripts/EraseEllipse-Menu.lua`**: Same UI as above, but draws using **dead (0)** cells (i.e., erases an ellipse region/outline).
 
-- **Feature 1:** One of the core features of this collection of Lua scripts is the set of tools that empower users to create and manipulate shapes within the Golly environment. These tools enable users to draw and erase various geometric shapes, including squares, rectangles, circles, and rings, using live (1) and dead (0) cells.
-- **Feature 2:** *Boundary Capture and Export for "Bugs"*: This feature is a set of Lua scripts that work collaboratively to capture and export the inner or outer boundary coordinates of a "bug" within the Larger Than Life cellular automata. The primary goal is to facilitate in-depth analysis, mathematical computations, and research on these complex automata patterns.
-- **Feature 3:** *Color Visualization of Cell Ages*: The Colors_Overlay directory introduces a sophisticated Lua script, ColorStepTorusOverlay.lua, paired with an RGB Color Selector web app, enhancing the Golly cellular automaton experience. The script allows users to dynamically color cells based on their ages, offering a vivid and evolving view of cellular patterns. The accompanying RGB Color Selector web app streamlines the process of choosing custom colors, ensuring a seamless and user-friendly experience. Together, these tools elevate the analysis and visual representation of cellular automata, making them invaluable for both enthusiasts and researchers in the field.
+### Bug boundary capture + CSV pipeline
 
-Whether you're a seasoned Golly user or just starting to explore the world of cellular automata, these scripts aim to simplify your workflow and enhance your research experience.
+These scripts are commonly used together to capture the **inner/outer boundary** of an LTL “bug” and export a boundary in a useful ordering.
 
-**Note:** These scripts are specifically designed to work within the Golly environment, utilizing Golly's Lua libraries. They may not function correctly in other Lua environments.
+- **`CaptureBugBoundary/BoundaryCellCapture.lua`**: From a **selected region**, identify **boundary cells** and write them to a CSV (default: `boundary_points.csv`).
+- **`CaptureBugBoundary/CSVplot.lua`**: Plot (x,y) points from a chosen CSV file onto the Golly grid as **live (1)** cells.
+- **`CaptureBugBoundary/CSVcenter_plot.lua`**: Like `CSVplot.lua`, but also computes the centroid and **centers the plotted coordinates about (0,0)**.
+- **`CaptureBugBoundary/CaptureLiveCellstoCSV.lua`**: Export all **live (1)** cell coordinates inside a selection to `live_cells.csv`.
+- **`CaptureBugBoundary/CaptureLiveCellstoCSV_AngularSort.lua`**: Export **edge cells** from a selection and write them **sorted clockwise** by angle to the shape’s center (default output: `sorted_live_cells.csv`).
 
-## Installation
+For the full step-by-step workflow (including where to edit file paths/names), see:
+- **`CaptureBugBoundary/README.md`**
 
-To get started with these Lua scripts tailored for Golly, follow these steps:
+### Configuration generation / automation / search
 
-1. **Clone the Repository:**
+These scripts generate and/or search initial “live sites” vs “dead sites” configurations (often parameterized by circles/ellipses/rectangles and setbacks), and write results to CSV for later analysis.
 
-   ```bash
-   git clone https://github.com/Brandon-Ism/LTL-GollyScripting
-   cd LTL-GollyScripting
-   ```
-2. Store the Scripts in the Golly Folder (Recommended):
-   For the most convenient access and usability, consider storing these scripts in the same directory as your Golly software installation. This ensures that Golly can easily locate and run the scripts when you need them.
-3. Launch Golly
-   Start or restart Golly to make sure it recognizes the newly added scripts.
-4. Use the Scripts:
-   You can now use these Lua scripts within Golly to draw shapes, capture bug boundaries, or perform other tasks as needed. Refer to the [Usage](#usage) section in this README and the individual script documentation for instructions on how to use them effectively.
+If you use tools from this section in your work, please cite the following paper: 
+> B. Ismalej, K. M. Evans, “Automating Large-Scale Detection and Classification of Larger Than Life Cellular Automata Patterns”. 2025 IEEE 15th Annual Computing and Communication Workshop and Conference (CCWC), Jan 6-8, 2025, Las Vegas, NV, USA.
 
-## Scripts
+- **`Configurations/Configuration_Generator.lua`**: Interactive generator to place many initial configurations on a grid (user chooses counts, spacing, shapes, dimensions, etc.).
+- **`Configurations/Configuration_Automation.lua`**: Automates generation across **ranges** of parameters and writes results to a CSV (includes spacing, live/dead shapes, setbacks, etc.).
+- **`Configurations/Configuration_Search_and_Classify.lua`**: Larger search/classification pipeline:
+  - Prompts for a rule/time horizon and parameter ranges.
+  - Generates many configurations, simulates them for a fixed number of time steps, and records measurements to CSV.
+  - Includes logic to estimate period/displacement for patterns.
+- **`Configurations/CSV_Configurator_Importer.lua`**: Reads a CSV of configuration parameters and places those configurations onto the grid.
 
-* **DrawRectangle.lua**: Allows user to draw a rectangle of live(1) cells by clicking opposite corners on grid.
-  
-* **DrawRectangle-Menu.lua**: Presents user with options to draw(1) a solid rectangle: clicking 2 opposite corners with live cell preview OR inputting vertices/dimensions of rectangle.
-  
-* **DrawRectangleWithErase.lua**: Allows user to draw(1) a rectangle, with a live cell preview, by clicking two opposite corners. The live cell preview will overwrite existing live(1) cells on the grid.
-  
-* **DrawRectangleWithOutline-Menu.lua**: Presents user with options to draw (live cells(1)) a rectangle: clicking 2 opposite corners with live cell preview OR inputting vertices/dimensions of rectangle.
-  
-* **EraseRectangleWithOutline-Menu.lua**: Presents user with options to draw (dead cells (0)) a rectangle outline: clicking 2 opposite corners with live cell preview OR inputting vertices/dimensions of rectangle.
-  
-* **DrawCircle-Menu.lua**: Presents user with options to draw (live (1)) a filled circle or unfilled circle (ring): selecting center and dragging to radius length OR inputting center coordinates (x,y), and inputting radius length.
-  
-* **EraseCircle-Menu.lua**: Presents user with options to draw (dead (0)) a filled circle or unfilled circle (ring): selecting center and dragging to radius length OR inputting center coordinates (x,y), and inputting radius length.
-  
-* **CaptureBugBoundary**: These three scripts, when used together, allow the user to capture and export inner and/or outer boundary cell coordinates to a csv file, of *Larger than Life "bugs"*. The .txt file contained within this directory provide a detailed guide to the use of these scripts for this desired purpose.
+### Visualization + image export
 
-* **Color_Step_Overlay.lua**: This script offers an immersive experience in cellular automata visualization within Golly. It prompts users to define a custom color palette and optionally transform a selected area into a torus. The script then steps through cellular generations, applying the user-defined colors based on cell ages. This tool is ideal for users who wish to add depth and vibrancy to their automata explorations or for researchers needing detailed visual analysis.
+- **`ImageScripts/Color_Step_Overlay.lua`**: Visualize cell age by applying user-defined colors over time using an overlay. Works on a selected region and supports saving the overlay as a PNG.  
+  - Note: the current script includes logic to create a toroidal universe from the selection (see in-script prompts/behavior).
+- **`ImageScripts/savePNG.lua`**: Save the current **selected** region as a PNG using an overlay, with user-defined RGB for live vs dead cells.
+- **`ImageScripts/RGB Color Picker - WebApp/RGB Color Selector.html`**: Small browser UI to pick RGB values and save swatches (handy for building palettes for overlay scripts).
+
+### Jitter bug analysis
+
+- **`Jitter_Bugs/JitterFactor.lua`**: Measures a selected “jitter bug”-like pattern by:
+  - Centralizing the pattern’s centroid at (0,0),
+  - Estimating period + displacement,
+  - Computing a **jitter factor** based on centroid distance from the line of displacement over a cycle,
+  - Writing a CSV (default: `jitter_bug_data.csv` in `g.getdir("app")`) including centroid trajectory.
+- **`Jitter_Bugs/plot_jitter.py`**: Python helper to plot the centroid path from a `jitter_bug_data.csv`-style export (creates PNGs and opens them using `feh`).
+
+### Pattern detection
+
+- **`ReplicatorDetect.lua`**: Experimental detector that advances the simulation and hashes connected clusters to flag a “possible replicator” if a cluster hash repeats within the checked window (default loop: 100 generations).
+
+### Browser tools
+
+- **`tools/jitter-centroid-plot-tool/`**: A lightweight, client-side plotting tool (HTML/JS + Plotly) to drag-and-drop a CSV and quickly visualize **Centroid X/Y** in the browser, with a “Download plot as PNG” button.
+
+  - **Try it live:** https://brandon-ism.github.io/LTL-GollyScripting/jitter-centroid-plot-tool/
 
 ## Contributing
 
-Thank you for your interest in contributing to this repository. As of now, I am not accepting external contributions. Some of these scripts are actively under development and are part of collaborative work with my professor at California State University, Northridge.
+Thanks for your interest. External contributions aren’t being accepted right now while the scripts evolve alongside ongoing research. If you have ideas or issues, please open an issue.
 
-**Why?**
+## License
 
-The decision to limit contributions at this time is to maintain the integrity and focus of the ongoing research and development efforts.
-
-**How You Can Help**
-
-While external contributions are not being accepted at this moment, your interest is greatly appreciated. If you have suggestions, feedback, or ideas for improvements, please feel free to open an issue in this repository. Your feedback can be valuable and may influence the direction of future development.
-
-Additionally, if you are interested in collaborating or have specific inquiries related to the scripts or our research, you can reach out via brandonDOTismalejDOT671ATmyDOTcsunDOTedu .
-
-Thank you for your understanding and support in our efforts to advance the study of Larger Than Life cellular automata.
-
-## Licensing
-
-This project is licensed under the MIT License - see the LICENSE.md file for details.
+MIT, see `LICENSE`.
