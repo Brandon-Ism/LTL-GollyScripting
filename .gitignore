@@ -1,0 +1,59 @@
+# --- Byte-compiled / optimized / DLL files ---
+__pycache__/
+*.py[cod]
+*$py.class
+
+# --- Virtual Environments ---
+.venv/
+venv/
+env/
+bin/
+lib/
+include/
+develop-eggs/
+
+# --- Jupyter Notebooks ---
+.ipynb_checkpoints
+*/.ipynb_checkpoints/*
+# Best practice: Don't ignore .ipynb files themselves, just the checkpoints.
+
+# --- Data & Large Files (Crucial for DS) ---
+data/
+*.csv
+*.json
+*.sql
+*.sqlite
+*.parquet
+*.pickle
+*.pkl
+*.npy
+*.npz
+*.h5
+*.models/
+models/*.pth
+models/*.onnx
+
+# --- Environment Variables (Secrets) ---
+.env
+.flaskenv
+secrets.json
+
+# --- Distribution / Packaging ---
+dist/
+build/
+*.egg-info/
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+
+# --- IDEs & Editors ---
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# --- Logs ---
+*.log
+logs/
