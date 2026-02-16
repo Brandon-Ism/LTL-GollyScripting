@@ -1,12 +1,11 @@
--- Golly Script: Capture and Classify Inner vs Outer Boundaries
--- 1. Identifies "External Background" using a Flood Fill algorithm.
--- 2. Scans selected area for live cells.
--- 3. Classifies edge cells as "outer" (touching background) or "inner" (touching holes).
--- 4. Sorts them angularly and exports to CSV.
+-- Capture and classify inner vs outer boundaries.
+-- Finds which dead cells are "outside" with a flood fill, then scans the selection
+-- for live cells and marks edge cells as outer (touching background) or inner (touching holes).
+-- Sorts by angle and writes to CSV.
 
 local g = golly()
 
--- Check for a selection
+-- need a selection to work with
 local selrect = g.getselrect()
 if #selrect == 0 then
     g.exit("No selection found. Please select an area first.")
@@ -15,58 +14,49 @@ end
 local x0, y0, width, height = table.unpack(selrect)
 
 -----------------------------------------------------------------------------------------------
--- STEP 1: FLOOD FILL BACKGROUND
--- We map which dead cells belong to the "outside" world.
+-- flood fill to find which dead cells are "outside"
 -----------------------------------------------------------------------------------------------
 
-local external_mask = {} -- Stores "x,y" of external dead cells
+local external_mask = {}  -- "x,y" -> true for dead cells that are external
 
--- Helper to create a key string for coordinates
 local function coordsToKey(x, y)
     return x .. "," .. y
 end
 
--- We scan a slightly larger area than the selection to allow the flood 
--- to wrap around the shape.
+-- scan a bit outside the selection so the fill can wrap around the shape
 local pad = 1
 local minX, minY = x0 - pad, y0 - pad
 local maxX, maxY = x0 + width + pad - 1, y0 + height + pad - 1
 
 local stack = {}
 
--- Initialize stack with the perimeter of our padded bounding box
--- We assume the boundary of the selection box is surrounded by dead cells (or we treat it as "outside")
+-- start from the padded box perimeter (we treat that as "outside")
 for x = minX, maxX do
-    table.insert(stack, {x, minY}) -- Top edge
-    table.insert(stack, {x, maxY}) -- Bottom edge
+    table.insert(stack, {x, minY})
+    table.insert(stack, {x, maxY})
 end
 for y = minY + 1, maxY - 1 do
-    table.insert(stack, {minX, y}) -- Left edge
-    table.insert(stack, {maxX, y}) -- Right edge
+    table.insert(stack, {minX, y})
+    table.insert(stack, {maxX, y})
 end
 
--- Perform the Flood Fill
 while #stack > 0 do
     local p = table.remove(stack)
     local px, py = p[1], p[2]
     local key = coordsToKey(px, py)
 
-    -- If we haven't visited this cell yet
     if not external_mask[key] then
-        -- In Golly, getcell returns 0 for dead, 1 for live.
-        -- We only flood through dead cells (0).
+        -- getcell: 0 = dead, 1 = live; we only spread through dead cells
         if g.getcell(px, py) == 0 then
             external_mask[key] = true
             
-            -- Check 4-connected neighbors (Up, Down, Left, Right)
-            -- We use 4-way fill to ensure we don't "leak" through diagonal cracks of live cells.
+            -- 4-connected neighbors so we don't leak through diagonal gaps
             local neighbors = {
                 {px + 1, py}, {px - 1, py}, {px, py + 1}, {px, py - 1}
             }
             
             for _, n in ipairs(neighbors) do
                 local nx, ny = n[1], n[2]
-                -- Ensure we stay within our scan bounds
                 if nx >= minX and nx <= maxX and ny >= minY and ny <= maxY then
                     if not external_mask[coordsToKey(nx, ny)] then
                         table.insert(stack, {nx, ny})
@@ -78,7 +68,7 @@ while #stack > 0 do
 end
 
 -----------------------------------------------------------------------------------------------
--- STEP 2: CLASSIFY CELLS
+-- classify live edge cells as outer (touching outside) or inner (touching a hole)
 -----------------------------------------------------------------------------------------------
 
 local outerEdges = {}
@@ -86,17 +76,17 @@ local innerEdges = {}
 
 for y = y0, y0 + height - 1 do
     for x = x0, x0 + width - 1 do
-        if g.getcell(x, y) ~= 0 then -- It is a live cell
+        if g.getcell(x, y) ~= 0 then
             
             local isOuter = false
             local isInner = false
             
-            -- Check all 8 neighbors (Moore Neighborhood)
+            -- look at all 8 neighbors; if it touches a dead cell, that side is outer or inner
             for dy = -1, 1 do
                 for dx = -1, 1 do
                     if dx ~= 0 or dy ~= 0 then
                         local nx, ny = x + dx, y + dy
-                        if g.getcell(nx, ny) == 0 then -- It's touching a dead cell
+                        if g.getcell(nx, ny) == 0 then
                             if external_mask[coordsToKey(nx, ny)] then
                                 isOuter = true
                             else
@@ -107,8 +97,7 @@ for y = y0, y0 + height - 1 do
                 end
             end
             
-            -- Add to respective lists
-            -- Note: A single cell can be BOTH inner and outer if the wall is 1 pixel thick.
+            -- a cell can be both if the wall is one pixel thick
             if isOuter then
                 table.insert(outerEdges, {x, y, "outer"})
             end
@@ -120,7 +109,7 @@ for y = y0, y0 + height - 1 do
 end
 
 -----------------------------------------------------------------------------------------------
--- STEP 3: SORTING HELPERS
+-- sort helpers (angle around center)
 -----------------------------------------------------------------------------------------------
 
 local function calculateCenter(cells)
@@ -133,7 +122,7 @@ local function calculateCenter(cells)
     return sumX / #cells, sumY / #cells
 end
 
--- Lua 5.1 has no math.atan2; Golly uses Lua 5.1.
+-- atan2 function
 local function custom_atan2(y, x)
     if x > 0 then
         return math.atan(y / x)
@@ -149,7 +138,6 @@ local function custom_atan2(y, x)
     return 0
 end
 
--- Sort function wrapper
 local function sortRadially(cellList)
     if #cellList == 0 then return end
     local cx, cy = calculateCenter(cellList)
@@ -159,25 +147,48 @@ local function sortRadially(cellList)
 end
 
 -----------------------------------------------------------------------------------------------
--- STEP 4: PROCESS AND WRITE
+-- recenter all boundary coords about the origin (round to integers)
 -----------------------------------------------------------------------------------------------
 
--- Sort the lists individually for better results
+local function recenter_coords()
+    local n = #outerEdges + #innerEdges
+    if n == 0 then return end
+    local sumX, sumY = 0, 0
+    for _, p in ipairs(outerEdges) do
+        sumX = sumX + p[1]
+        sumY = sumY + p[2]
+    end
+    for _, p in ipairs(innerEdges) do
+        sumX = sumX + p[1]
+        sumY = sumY + p[2]
+    end
+    local cx, cy = sumX / n, sumY / n
+    local function shift(p)
+        p[1] = math.floor(p[1] - cx + 0.5)
+        p[2] = math.floor(p[2] - cy + 0.5)
+    end
+    for _, p in ipairs(outerEdges) do shift(p) end
+    for _, p in ipairs(innerEdges) do shift(p) end
+end
+
+-----------------------------------------------------------------------------------------------
+-- sort and write CSV
+-----------------------------------------------------------------------------------------------
+
+recenter_coords()
 sortRadially(outerEdges)
 sortRadially(innerEdges)
 
-local filename = "classified_boundaries.csv"
+local filename = "boundary_cells.csv"
 local file = io.open(filename, "w")
 
 if file then
     file:write("x,y,boundary_type\n")
     
-    -- Write Outer Edges
     for _, coords in ipairs(outerEdges) do
         file:write(coords[1] .. "," .. coords[2] .. "," .. coords[3] .. "\n")
     end
     
-    -- Write Inner Edges
     for _, coords in ipairs(innerEdges) do
         file:write(coords[1] .. "," .. coords[2] .. "," .. coords[3] .. "\n")
     end
