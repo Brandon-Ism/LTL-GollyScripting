@@ -179,7 +179,17 @@ recenter_coords()
 sortRadially(outerEdges)
 sortRadially(innerEdges)
 
-local filename = "boundary_cells.csv"
+-- build filename from current layer/pattern name (safe for filesystem)
+local function safe_pattern_name()
+    local name = g.getname()
+    if name == "" then name = "untitled" end
+    -- allow only alphanumeric, underscore, hyphen; replace rest with underscore
+    name = name:gsub("[%s%p]", "_"):gsub("_+", "_"):gsub("^_", ""):gsub("_$", "")
+    if name == "" then name = "pattern" end
+    return name
+end
+
+local filename = "boundary_cells_" .. safe_pattern_name() .. ".csv"
 local file = io.open(filename, "w")
 
 if file then
