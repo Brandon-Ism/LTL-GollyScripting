@@ -24,17 +24,89 @@
     By reading configuration data from a CSV file, the script allows for quick adjustments and batch processing of multiple configurations.
     This script enables users to quickly explore various configurations to discover those that evolve into interesting and potentially stable patterns under the Larger the Life rules, and other rules supported by Golly.
 
-    NOTE:
-    The user should modify the 'filepath' variable within the script to point to the location of their CSV file before running the script.
 
--- Author: Brandon Ismalej (brandon.ismalej.671@my.csun.edu), Apr 2023.
+-- Author: Brandon Ismalej (brandon.ismalej.671@my.csun.edu), Apr 2024.; Updated: Aug. 2024
 
 ]]
 -----------------------------------------------------------------------------------------------
 
 local g = golly() -- Initialize Golly library
+-----------------------------------------------------------------------------------------------
 
-local filepath = '/dir/.../myfile.csv'
+-- Function to correct file path slashes for Windows
+local function correct_file_path(filepath)
+
+    -- Remove any leading or trailing double or single quotes
+    filepath = filepath:gsub([["]], ""):gsub([['']], "")
+
+    -- Replace both single and double backslashes with a single forward slash
+    filepath = filepath:gsub("\\+", "/")
+    return filepath
+end
+-----------------------------------------------------------------------------------------------
+
+-- Function to prompt the user for a file path and validate it
+local function get_valid_file_path()
+    while true do
+        local input_path = g.getstring("Enter the file path for the CSV file:", "")
+        local corrected_path = correct_file_path(input_path)
+
+        g.show("Corrected file path: " .. corrected_path) 
+        local file = io.open(corrected_path, "r")
+        
+        if file then
+            file:close()
+            return corrected_path
+        else
+            g.warn("Invalid file path. Please try again.")
+        end
+    end
+end
+-----------------------------------------------------------------------------------------------
+
+-- Function to count the number of configurations in the CSV file
+local function count_configs(filepath)
+    local file = io.open(filepath, "r")
+    if not file then
+        g.warn("Could not open file: " .. filepath)
+        return 0
+    end
+
+    -- Skip the header line
+    file:read()
+
+    -- Count the remaining lines
+    local count = 0
+    for line in file:lines() do
+        if line:match("%S") then -- Only count non-empty lines
+            count = count + 1
+        end
+    end
+
+    file:close()
+    return count
+end
+
+-- Function to prompt the user for number of configurations to plot
+local function get_num_configs_to_plot(total_configs)
+    local choice = g.getstring("Total configurations found: " .. total_configs .. ".\nWould you like to plot all of them? (y/n)", "y")
+    if choice:lower() == "y" then
+        return total_configs
+    else
+        return tonumber(g.getstring("Enter the number of configurations to plot:", tostring(total_configs)))
+    end
+end
+-----------------------------------------------------------------------------------------------
+
+-- Prompt for and validate the file path
+local filepath = get_valid_file_path()
+
+-- Automatically count the number of configurations
+local total_configs = count_configs(filepath)
+g.show("Number of configurations found: " .. total_configs)
+
+-- Prompt the user for how many configurations to plot
+local num_configs = get_num_configs_to_plot(total_configs)
 -----------------------------------------------------------------------------------------------
 
 -- Prompt user for grid name and clear the grid with the custom name
@@ -44,7 +116,6 @@ local grid = g.getlayer()
 -----------------------------------------------------------------------------------------------
 
 -- Prompt user for number of configurations to be made and spacing of configurations
-local num_configs = tonumber(g.getstring("Enter the number of configurations:", "50"))
 local spacing = tonumber(g.getstring("Enter the spacing of the configurations (center to center distance):", "100"))
 local configs_per_row = tonumber(g.getstring("How many configurations per row?", "10"))
 -----------------------------------------------------------------------------------------------
@@ -217,33 +288,36 @@ end
 file:read()
 -----------------------------------------------------------------------------------------------
 
+
 -- Loop through each configuration line in the CSV file
 local current_x, current_y = 0, 0
 local config_count = 0
-for line in file:lines() do
-    local config = split_string(line, ",")
-    if #config >= 5 then
-        -- Draw the live shape
-        handle_shape(config, current_x, current_y, 1)
-        
-        -- Update position for next configuration
-        config_count = config_count + 1
-        if config_count % configs_per_row == 0 then
-            current_x = 0
-            current_y = current_y + spacing
-        else
-            current_x = current_x + spacing
-        end
-
-        -- Stop if script has created the user-specified number of configurations
-        if config_count >= num_configs then break end
+for line in io.lines(filepath) do
+    if config_count == 0 then
+        config_count = config_count + 1 -- Skip the header line
     else
-        g.warn("Invalid configuration format in CSV line: " .. line)
-        break
+        local config = split_string(line, ",")
+        if #config >= 5 then
+            -- Draw the live shape
+            handle_shape(config, current_x, current_y, 1)
+            
+            -- Update position for next configuration
+            if config_count % configs_per_row == 0 then
+                current_x = 0
+                current_y = current_y + spacing
+            else
+                current_x = current_x + spacing
+            end
+
+            -- Stop if script has created the specified number of configurations
+            if config_count >= num_configs then break end
+        else
+            g.warn("Invalid configuration format in CSV line: " .. line)
+            break
+        end
+        config_count = config_count + 1
     end
 end
-
-file:close() -- Close CSV file reading within script.
 
 g.note("Configurations have been successfully placed on the grid.")
 g.update()
