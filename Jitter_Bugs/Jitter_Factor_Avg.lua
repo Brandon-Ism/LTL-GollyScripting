@@ -503,16 +503,16 @@ Type "yes" to proceed anyway, or "no" to terminate script:
     local escaped_rule = g.getrule():gsub('"', '""')
 
     file:write("Time,Centroid X,Centroid Y,Distance from Line,Tau Jitter Factors,Symmetry Detected (0/1)\n")
-    file:write(',,,,,"Rule: "' .. escaped_rule .. '"\n')
-    file:write(",,,,,Total Runtime (s): " .. elapsed_time .. "\n")
-    file:write(",,,,,Jitter Factor: " .. jitter_factor .. "\n")
-    file:write(",,,,,Average Jitter Factor over Period: " .. average_jitter_factor .. "\n")
-    file:write(',,,,,"Line of Displacement: ' .. line_of_displacement .. '"\n')
-    file:write(",,,,,Equation of Line: " .. line_equation .. "\n")
-    file:write(",,,,,Sum of Distances: " .. summ_distances .. "\n")
-    file:write(",,,,,Period: " .. tau .."\n")
-    file:write(",,,,,Delta X: " .. math.abs(deltax) .. "\n")
-    file:write(",,,,,Delta Y: " .. math.abs(deltay) .. "\n")
+    file:write(',,,,,,"Rule: ' .. escaped_rule .. '"\n')
+    file:write(",,,,,,Total Runtime (s): " .. elapsed_time .. "\n")
+    file:write(",,,,,,Jitter Factor: " .. jitter_factor .. "\n")
+    file:write(",,,,,,Average Jitter Factor over Period: " .. average_jitter_factor .. "\n")
+    file:write(',,,,,,"Line of Displacement: ' .. line_of_displacement .. '"\n')
+    file:write(",,,,,,Equation of Line: " .. line_equation .. "\n")
+    file:write(",,,,,,Sum of Distances: " .. summ_distances .. "\n")
+    file:write(",,,,,,Period: " .. tau .."\n")
+    file:write(",,,,,,Delta X: " .. math.abs(deltax) .. "\n")
+    file:write(",,,,,,Delta Y: " .. math.abs(deltay) .. "\n")
 
     for _, row in ipairs(data_table) do
         -- row: {t, cx, cy, distance, jitter_factor_or_nil, sym_flag}
