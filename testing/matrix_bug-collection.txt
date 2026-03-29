@@ -1,39 +1,25 @@
---- Selected Matrix (14 x 17) ---
-0 0 0 0 0 0 0 0 0 0 0 0 0 0
-0 0 0 0 0 0 0 0 0 0 0 0 0 0
-0 0 0 0 1 1 1 0 0 0 0 0 0 0
-0 0 1 1 1 1 1 1 0 0 0 0 0 0
-0 0 1 1 1 1 1 1 1 0 0 0 0 0
-0 0 1 1 1 1 1 1 1 1 0 0 0 0
-0 1 1 1 1 0 0 1 1 1 1 1 0 0
-0 1 1 1 0 0 0 0 1 1 1 1 0 0
-1 1 1 0 0 0 0 0 0 1 1 1 1 0
-0 1 0 0 0 0 0 0 1 1 1 1 1 0
-0 1 1 0 0 0 0 1 1 1 1 1 0 0
-0 0 1 1 0 0 1 1 1 1 1 1 0 0
-0 0 0 1 1 0 1 1 1 1 1 0 0 0
-0 0 0 0 0 1 1 1 0 0 0 0 0 0
-0 0 0 0 0 0 0 0 0 0 0 0 0 0
-0 0 0 0 0 0 0 0 0 0 0 0 0 0
-0 0 0 0 0 0 0 0 0 0 0 0 0 0
+--- Selected Matrix (7 x 10) ---
+0 0 0 0 0 0 0
+0 0 0 0 0 0 0
+0 0 1 1 1 0 0
+0 0 1 0 0 0 0
+0 0 1 1 1 0 0
+0 0 0 0 1 0 0
+0 0 1 1 1 0 0
+0 0 0 0 0 0 0
+0 0 0 0 0 0 0
+0 0 0 0 0 0 0
 
 --- Symmetry Analysis Uses Tight Live-Cell Bounding Box ---
-Selection-relative bounds: x=[1,13], y=[3,14]
-Absolute bounds: x=[38,50], y=[12,23]
-Cropped Matrix (13 x 12):
-0 0 0 0 1 1 1 0 0 0 0 0 0
-0 0 1 1 1 1 1 1 0 0 0 0 0
-0 0 1 1 1 1 1 1 1 0 0 0 0
-0 0 1 1 1 1 1 1 1 1 0 0 0
-0 1 1 1 1 0 0 1 1 1 1 1 0
-0 1 1 1 0 0 0 0 1 1 1 1 0
-1 1 1 0 0 0 0 0 0 1 1 1 1
-0 1 0 0 0 0 0 0 1 1 1 1 1
-0 1 1 0 0 0 0 1 1 1 1 1 0
-0 0 1 1 0 0 1 1 1 1 1 1 0
-0 0 0 1 1 0 1 1 1 1 1 0 0
-0 0 0 0 0 1 1 1 0 0 0 0 0
+Selection-relative bounds: x=[3,5], y=[3,7]
+Absolute bounds: x=[85,87], y=[56,60]
+Cropped Matrix (3 x 5):
+1 1 1
+1 0 0
+1 1 1
+0 0 1
+1 1 1
 
 --- Symmetry Classification ---
-Classification: Asymmetric
-Valid Symmetries: Identity (R0)
+Classification: C2 (180° Rotational Symmetry)
+Valid Symmetries: Identity (R0), Rotate 180° (R180)
