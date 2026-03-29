@@ -139,6 +139,110 @@ local function calculate_summ_distances(distances)
 end
 
 -----------------------------------------------------------------------------------------------
+-- D4 Symmetry helpers (ported from symmetry_check_dihedral_D4.lua)
+-----------------------------------------------------------------------------------------------
+local function sym_get_matrix(rect)
+    local min_x, min_y, width, height = rect[1], rect[2], rect[3], rect[4]
+    local mat = {}
+    for y = 0, height - 1 do
+        mat[y + 1] = {}
+        for x = 0, width - 1 do
+            local state = g.getcell(min_x + x, min_y + y)
+            mat[y + 1][x + 1] = (state > 0) and 1 or 0
+        end
+    end
+    return mat
+end
+
+local function sym_crop_to_live(mat, w, h)
+    local min_x, min_y, max_x, max_y = nil, nil, nil, nil
+    for y = 1, h do
+        for x = 1, w do
+            if mat[y][x] == 1 then
+                if not min_x or x < min_x then min_x = x end
+                if not max_x or x > max_x then max_x = x end
+                if not min_y or y < min_y then min_y = y end
+                if not max_y or y > max_y then max_y = y end
+            end
+        end
+    end
+    if not min_x then return {}, 0, 0 end
+    local cw = max_x - min_x + 1
+    local ch = max_y - min_y + 1
+    local cropped = {}
+    for y = 1, ch do
+        cropped[y] = {}
+        for x = 1, cw do
+            cropped[y][x] = mat[min_y + y - 1][min_x + x - 1]
+        end
+    end
+    return cropped, cw, ch
+end
+
+local function sym_check_R90(mat, w, h)
+    if w ~= h then return false end
+    for y = 1, h do for x = 1, w do
+        if mat[y][x] ~= mat[h - x + 1][y] then return false end
+    end end
+    return true
+end
+local function sym_check_R180(mat, w, h)
+    for y = 1, h do for x = 1, w do
+        if mat[y][x] ~= mat[h - y + 1][w - x + 1] then return false end
+    end end
+    return true
+end
+local function sym_check_R270(mat, w, h)
+    if w ~= h then return false end
+    for y = 1, h do for x = 1, w do
+        if mat[y][x] ~= mat[x][w - y + 1] then return false end
+    end end
+    return true
+end
+local function sym_check_SH(mat, w, h)
+    for y = 1, h do for x = 1, w do
+        if mat[y][x] ~= mat[h - y + 1][x] then return false end
+    end end
+    return true
+end
+local function sym_check_SV(mat, w, h)
+    for y = 1, h do for x = 1, w do
+        if mat[y][x] ~= mat[y][w - x + 1] then return false end
+    end end
+    return true
+end
+local function sym_check_SD1(mat, w, h)
+    if w ~= h then return false end
+    for y = 1, h do for x = 1, w do
+        if mat[y][x] ~= mat[x][y] then return false end
+    end end
+    return true
+end
+local function sym_check_SD2(mat, w, h)
+    if w ~= h then return false end
+    for y = 1, h do for x = 1, w do
+        if mat[y][x] ~= mat[w - x + 1][h - y + 1] then return false end
+    end end
+    return true
+end
+
+-- Returns 1 if any non-trivial D4 symmetry is present, 0 otherwise.
+local function check_any_symmetry()
+    local rect = g.getrect()
+    if #rect == 0 then return 0 end
+    local mat = sym_get_matrix(rect)
+    local cropped, cw, ch = sym_crop_to_live(mat, rect[3], rect[4])
+    if cw == 0 or ch == 0 then return 0 end
+    if sym_check_R90 (cropped, cw, ch) or sym_check_R180(cropped, cw, ch) or
+       sym_check_R270(cropped, cw, ch) or sym_check_SH  (cropped, cw, ch) or
+       sym_check_SV  (cropped, cw, ch) or sym_check_SD1 (cropped, cw, ch) or
+       sym_check_SD2 (cropped, cw, ch) then
+        return 1
+    end
+    return 0
+end
+
+-----------------------------------------------------------------------------------------------
 -- shift_pattern_to_origin
 -----------------------------------------------------------------------------------------------
 local function shift_pattern_to_origin(cx, cy)
@@ -321,7 +425,9 @@ Type "yes" to proceed anyway, or "no" to terminate script:
                                                     initial_cx + deltax + (deltax * ((t // tau) % cycles)),
                                                     initial_cy + deltay + (deltay * ((t // tau) % cycles)))
         end
-        table.insert(data_table, {t, cx, cy, distance})
+        local sym_flag = check_any_symmetry()
+        -- columns: t, cx, cy, distance, tau_jitter_factor (filled later), symmetry_flag
+        table.insert(data_table, {t, cx, cy, distance, nil, sym_flag})
 
         g.run(1)
     end
@@ -396,7 +502,7 @@ Type "yes" to proceed anyway, or "no" to terminate script:
     -- Escape double quotes in the rule
     local escaped_rule = g.getrule():gsub('"', '""')
 
-    file:write("Time,Centroid X,Centroid Y,Distance from Line,Tau Jitter Factors\n")
+    file:write("Time,Centroid X,Centroid Y,Distance from Line,Tau Jitter Factors,Symmetry Detected (0/1)\n")
     file:write(',,,,,"Rule: "' .. escaped_rule .. '"\n')
     file:write(",,,,,Total Runtime (s): " .. elapsed_time .. "\n")
     file:write(",,,,,Jitter Factor: " .. jitter_factor .. "\n")
@@ -409,7 +515,13 @@ Type "yes" to proceed anyway, or "no" to terminate script:
     file:write(",,,,,Delta Y: " .. math.abs(deltay) .. "\n")
 
     for _, row in ipairs(data_table) do
-        file:write(table.concat(row, ",") .. "\n")
+        -- row: {t, cx, cy, distance, jitter_factor_or_nil, sym_flag}
+        file:write(tostring(row[1]) .. "," ..
+                   tostring(row[2]) .. "," ..
+                   tostring(row[3]) .. "," ..
+                   tostring(row[4]) .. "," ..
+                   (row[5] ~= nil and tostring(row[5]) or "") .. "," ..
+                   tostring(row[6]) .. "\n")
     end
 
     file:close()
