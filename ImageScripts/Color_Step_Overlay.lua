@@ -22,6 +22,8 @@
  - Ensure that a selection is made in Golly before running the script, as the visualization operates on the selected area.
  - The script automatically applies a toroidal transformation to the selection, with no user option to disable it.
 
+ One clean option as an RGB color picker is: https://rgbcolorpicker.com/
+
   Author: Brandon Ismalej (brandon.ismalej.671@my.csun.edu), Oct. 2025.
 
 ]]--
@@ -144,6 +146,52 @@ local color_definitions = {
     ["forest green"] = "34 139 34",
     ["beige"] = "245 245 220"
 }
+-----------------------------------------------------------------------------------------------
+
+-- Normalize a file path entered by the user from any OS format.
+-- Strips surrounding whitespace/quotes and converts backslashes to forward slashes.
+local function normalize_path(path)
+    -- Strip leading/trailing whitespace
+    path = path:match("^%s*(.-)%s*$") or path
+    -- Strip surrounding single or double quotes
+    path = path:match('^"(.*)"$') or path:match("^'(.*)'$") or path
+    -- Normalize backslashes to forward slashes (Lua's io.open accepts / on all platforms)
+    path = path:gsub("\\", "/")
+    return path
+end
+
+-- Parse a CSV file where each line is: r, g, b
+-- Returns a table of "r g b" strings, or exits with an error message.
+local function parse_csv_palette(filepath)
+    local file = io.open(filepath, "r")
+    if not file then
+        g.exit("Could not open file: " .. filepath .. "\nPlease check the path and try again.")
+    end
+    local csv_colors = {}
+    local line_num = 0
+    for line in file:lines() do
+        line_num = line_num + 1
+        if line:match("%S") then  -- skip blank lines
+            local r, gv, b = line:match("(%d+)%s*,%s*(%d+)%s*,%s*(%d+)")
+            if not r then
+                file:close()
+                g.exit("Invalid format on line " .. line_num .. " of CSV.\nExpected: r, g, b  (e.g. 255, 0, 128)")
+            end
+            r, gv, b = tonumber(r), tonumber(gv), tonumber(b)
+            if r > 255 or gv > 255 or b > 255 then
+                file:close()
+                g.exit("RGB value out of range (0-255) on line " .. line_num)
+            end
+            table.insert(csv_colors, r .. " " .. gv .. " " .. b)
+        end
+    end
+    file:close()
+    if #csv_colors == 0 then
+        g.exit("No valid RGB values found in the CSV file.")
+    end
+    return csv_colors
+end
+
 -----------------------------------------------------------------------------------------------
 
 -- Function to present color palettes to the user.
@@ -302,6 +350,7 @@ local function show_palette_options(numcolors)
     for _, option in ipairs(options) do
         palette_string = palette_string .. option .. "\n"
     end
+    palette_string = palette_string .. "o) Import colors from CSV file\n"
 
     -- Get the user's choice (palette letter)
     local palette_letter = g.getstring(palette_string, "", "Palette Choice")
@@ -313,6 +362,17 @@ local function show_palette_options(numcolors)
     -- Check if the user chose to enter their own RGB values for all colors
     if palette_letter == "n" then
         return "custom" -- Use a special value to indicate full custom input
+    end
+
+    -- Check if the user wants to import from a CSV file
+    if palette_letter == "o" then
+        local raw_path = g.getstring(
+            "Enter the path to your CSV file.\n" ..
+            "Each line should contain: r, g, b  (e.g. 255, 0, 128)",
+            "", "CSV File Path")
+        local filepath = normalize_path(raw_path)
+        local csv_colors = parse_csv_palette(filepath)
+        return { csv_colors = csv_colors }
     end
 
     return { preset = palette_choice }
@@ -395,10 +455,26 @@ local function apply_palette_choice(palette_data, numcolors)
     if palette_data == "custom" then
         for i = 1, numcolors do
             local r, g, b = get_rgb("Enter RGB values for COLOR # " .. i .. " separated by spaces (e.g., '255 0 0' for red):")
-            if not r or not g or not b then 
-                g.exit("Invalid RGB values for color #" .. i) 
+            if not r or not g or not b then
+                g.exit("Invalid RGB values for color #" .. i)
             end
             colors[i] = r .. " " .. g .. " " .. b
+        end
+        return colors
+    end
+
+    -- If the user imported a CSV file
+    if palette_data.csv_colors then
+        local csv_colors = palette_data.csv_colors
+        local n_csv = #csv_colors
+        if n_csv ~= numcolors then
+            g.note(
+                "CSV file contains " .. n_csv .. " color(s), but you requested " .. numcolors .. " color(s).\n" ..
+                "Colors will cycle through the " .. n_csv .. " CSV values to fill all " .. numcolors .. " slots."
+            )
+        end
+        for i = 1, numcolors do
+            colors[i] = csv_colors[((i - 1) % n_csv) + 1]
         end
         return colors
     end
