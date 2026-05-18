@@ -119,15 +119,12 @@ end
 
 -- Function to calculate distance from a point to the line.
 local function calculate_distance_from_line(cx, cy, initial_cx, initial_cy, final_cx, final_cy)
-
-    if final_cx == initial_cx then -- if the line of displacement is vertical, undefined slope.
+    if final_cx == initial_cx then -- vertical line of displacement (undefined slope)
         return math.abs(cx - initial_cx)
-
     else
-    m = (final_cy - initial_cy)/(final_cx - initial_cx)
-    b = initial_cy - (m * initial_cx)
-    return math.sqrt((((m*(cy-b))-(m^2*cx))^2) / (m^2+1) + (((m*cx)+b-cy)^2) / (m^2+1))
-
+        local m = (final_cy - initial_cy) / (final_cx - initial_cx)
+        local b = initial_cy - (m * initial_cx)
+        return math.abs(m * cx - cy + b) / math.sqrt(m * m + 1)
     end
 end
 -----------------------------------------------------------------------------------------------
@@ -201,7 +198,7 @@ local function main()
 
     shift_pattern_to_origin(init_cx, init_cy) -- Shift pattern to be centered about (0,0).
     g.setgen("0")
-    initial_cx, initial_cy = calculate_centroid() --Recalculate intitial x,y from centralized pattern.
+    local initial_cx, initial_cy = calculate_centroid() --Recalculate intitial x,y from centralized pattern.
 
     -- Pre-pass: run forward tau steps to capture the true centroid at t=tau,
     -- then restore the pattern so the main loop starts fresh from t=0.
@@ -247,10 +244,10 @@ local function main()
     local jitter_factor = calculate_jitter_factor(distances, tau)
     local summ_distances = calculate_summ_distances(distances)
     
-    local line_of_displacement = "(" .. initial_cx .. ", " .. initial_cy .. ") to (" .. tau_cx .. ", " .. tau_cy .. ")" 
-    m = (tau_cy - initial_cy)/(tau_cx - initial_cx)
-    b = initial_cy - (m * initial_cx)
-    line_equation = string.format("y = %.2fx + %.2f", m, b)
+    local line_of_displacement = "(" .. initial_cx .. ", " .. initial_cy .. ") to (" .. tau_cx .. ", " .. tau_cy .. ")"
+    local m = (tau_cy - initial_cy) / (tau_cx - initial_cx)
+    local b = initial_cy - (m * initial_cx)
+    local line_equation = string.format("y = %.2fx + %.2f", m, b)
 
     -- Display metrics with a g.note
     g.note("Period: " .. tau ..
