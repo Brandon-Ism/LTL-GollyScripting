@@ -117,7 +117,10 @@ local function calculate_jitter_factor(distances, tau)
     for _, d in ipairs(distances) do
         sum = sum + math.abs(d)
     end
-    return sum / tau
+    -- Divide by (tau - 1) because the distance at t=0 is always 0
+    -- (the starting centroid lies on the line), so there are only tau-1
+    -- non-trivial distances.
+    return sum / (tau - 1)
 end
 
 local function calculate_distance_from_line(cx, cy, x1, y1, x2, y2)
@@ -395,7 +398,11 @@ Type "yes" to proceed anyway, or "no" to terminate script:
     local initial_cx, initial_cy = calculate_centroid()
     local data_table = {}
     local distances = {}
-    local tau_cx, tau_cy
+    -- Use the centroid at t=tau (from the overflow-check run) as the true line endpoint.
+    local tau_cx = cx_tau
+    local tau_cy = cy_tau
+    local per_cx  = tau_cx - initial_cx
+    local per_cy  = tau_cy - initial_cy
 
     -- Timer: Start
     local start_time = os.time()
@@ -409,22 +416,16 @@ Type "yes" to proceed anyway, or "no" to terminate script:
             return
         end
 
-        if t == tau - 1 then
-            tau_cx, tau_cy = cx, cy
+        local n        = t // tau
+        local distance = calculate_distance_from_line(cx, cy,
+                                                      initial_cx + n       * per_cx,
+                                                      initial_cy + n       * per_cy,
+                                                      initial_cx + (n + 1) * per_cx,
+                                                      initial_cy + (n + 1) * per_cy)
+        if t < tau then
+            table.insert(distances, distance)
         end
 
-        local distance
-        if t < tau then
-            distance = calculate_distance_from_line(cx, cy, initial_cx, initial_cy,
-                                                    initial_cx + deltax, initial_cy + deltay)
-            table.insert(distances, distance)
-        else
-            distance = calculate_distance_from_line(cx, cy,
-                                                    initial_cx + (deltax * ((t // tau) % cycles)),
-                                                    initial_cy + (deltay * ((t // tau) % cycles)),
-                                                    initial_cx + deltax + (deltax * ((t // tau) % cycles)),
-                                                    initial_cy + deltay + (deltay * ((t // tau) % cycles)))
-        end
         local sym_flag = check_any_symmetry()
         -- columns: t, cx, cy, distance, tau_jitter_factor (filled later), symmetry_flag
         table.insert(data_table, {t, cx, cy, distance, nil, sym_flag})
@@ -456,7 +457,7 @@ Type "yes" to proceed anyway, or "no" to terminate script:
 
             local distance_i = calculate_distance_from_line(cx_i, cy_i,
                                                             initial_cx_i, initial_cy_i,
-                                                            initial_cx_i + deltax, initial_cy_i + deltay)
+                                                            initial_cx_i + per_cx, initial_cy_i + per_cy)
             table.insert(temp_distances, distance_i)
             g.run(1)
         end
@@ -516,9 +517,10 @@ Type "yes" to proceed anyway, or "no" to terminate script:
 
     for _, row in ipairs(data_table) do
         -- row: {t, cx, cy, distance, jitter_factor_or_nil, sym_flag}
+        -- Centroid Y (row[3]) is negated to correct for Golly's inverted y-axis.
         file:write(tostring(row[1]) .. "," ..
                    tostring(row[2]) .. "," ..
-                   tostring(row[3]) .. "," ..
+                   tostring(-row[3]) .. "," ..
                    tostring(row[4]) .. "," ..
                    (row[5] ~= nil and tostring(row[5]) or "") .. "," ..
                    tostring(row[6]) .. "\n")

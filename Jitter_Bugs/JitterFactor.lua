@@ -110,7 +110,10 @@ local function calculate_jitter_factor(distances, tau)
     for _, d in ipairs(distances) do
         sum = sum + math.abs(d)
     end
-    return sum / tau
+    -- Divide by (tau - 1) because the distance at t=0 is always 0
+    -- (the starting centroid lies on the line), so there are only tau-1
+    -- non-trivial distances.
+    return sum / (tau - 1)
 end
 -----------------------------------------------------------------------------------------------
 
@@ -200,29 +203,42 @@ local function main()
     g.setgen("0")
     initial_cx, initial_cy = calculate_centroid() --Recalculate intitial x,y from centralized pattern.
 
+    -- Pre-pass: run forward tau steps to capture the true centroid at t=tau,
+    -- then restore the pattern so the main loop starts fresh from t=0.
+    local saved_cells = g.getcells(g.getrect())
+    local saved_rule  = g.getrule()
+    for _ = 1, tau do g.run(1) end
+    local cx_tau, cy_tau = calculate_centroid()
+    g.new("Centralized Pattern")
+    g.setrule(saved_rule)
+    g.putcells(saved_cells)
+    g.setgen("0")
+
+    -- Use the centroid at t=tau as the true line endpoint.
+    local tau_cx = cx_tau
+    local tau_cy = cy_tau
+    local per_cx  = tau_cx - initial_cx
+    local per_cy  = tau_cy - initial_cy
+
     -- Data table for CSV output
     local data_table = {}
     local distances = {}
-
-    local tau_cx, tau_cy
 
     -- Iterate through each generation up to tau to calculate centroids and distances
     g.setgen("0") -- Reset to initial state for accurate measurement
     for t = 0, tau * cycles - 1 do
 
-        if t == tau-1 then
-            tau_cx, tau_cy = calculate_centroid()
-        end
-
         g.show(" JITTER FACTOR IS BEING CALCULATED...\n")
         local cx, cy = calculate_centroid()
-        local distance
-        if t < tau then  -- Only calculate distance for the first cycle for jitter factor
-            distance = calculate_distance_from_line(cx, cy, initial_cx, initial_cy, initial_cx+deltax, initial_cy+deltay)
+
+        local n        = t // tau
+        local distance = calculate_distance_from_line(cx, cy,
+                                                      initial_cx + n       * per_cx,
+                                                      initial_cy + n       * per_cy,
+                                                      initial_cx + (n + 1) * per_cx,
+                                                      initial_cy + (n + 1) * per_cy)
+        if t < tau then
             table.insert(distances, distance)
-        else
-            -- For additional cycles, calculate distance but do not add to distances for jitter factor calculation
-            distance = calculate_distance_from_line(cx, cy, initial_cx + (deltax * ((t // tau) % cycles)), initial_cy + (deltay * ((t // tau) % cycles)), initial_cx + deltax + (deltax * ((t // tau) % cycles)), initial_cy + deltay + (deltay * ((t // tau) % cycles)))
         end
         table.insert(data_table, {t, cx, cy, distance})
         g.run(1)
@@ -262,7 +278,12 @@ local function main()
     file:write(",,,,,Delta Y: " .. math.abs(deltay) .. "\n")
 
     for _, row in ipairs(data_table) do
-        file:write(table.concat(row, ",") .. "\n")
+        -- row: {t, cx, cy, distance}
+        -- Centroid Y (row[3]) is negated to correct for Golly's inverted y-axis.
+        file:write(tostring(row[1]) .. "," ..
+                   tostring(row[2]) .. "," ..
+                   tostring(-row[3]) .. "," ..
+                   tostring(row[4]) .. "\n")
     end
 
     file:close()
